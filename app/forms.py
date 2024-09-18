@@ -4,6 +4,7 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length
 from .models import Usuario, CadEntidade, GrPrioridade, CadTpOcorrencia, CadSoftware, CadModulo, TpEntidade
 
 class OcorrenciaForm(FlaskForm):
+    numero_ocorrencia = StringField('Número da Ocorrência', render_kw={'readonly': True})  # Campo desabilitado
     entidade = SelectField('Entidade', coerce=int, validators=[DataRequired()])
     contato = TextAreaField('Contato', validators=[DataRequired()])
     prioridade = SelectField('Prioridade', choices=[], coerce=int, validators=[DataRequired()])
@@ -13,11 +14,11 @@ class OcorrenciaForm(FlaskForm):
     descricao = TextAreaField('Descrição', validators=[DataRequired()])
     resolucao = TextAreaField('Resolução')
     anexo = FileField('Anexar Arquivo')  # Campo para anexar arquivo
-    submit = SubmitField('Criar Ocorrência')
+    submit = SubmitField('Salvar Alterações')
 
     def __init__(self, *args, **kwargs):
         super(OcorrenciaForm, self).__init__(*args, **kwargs)
-        self.entidade.choices = [(e.id, e.municipio) for e in CadEntidade.query.all()] 
+        self.entidade.choices = [(e.id, e.municipio) for e in CadEntidade.query.all()]
         self.prioridade.choices = [(p.id, p.descricao) for p in GrPrioridade.query.all()]
         self.tipo.choices = [(t.id, t.descricao) for t in CadTpOcorrencia.query.all()]
         self.software.choices = [(s.id, s.descricao) for s in CadSoftware.query.all()]

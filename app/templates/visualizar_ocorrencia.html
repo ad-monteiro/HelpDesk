@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Visualizar Ocorrência{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<h1 class="h3 mb-4 text-gray-800">Visualizar Ocorrência {{ ocorrencia.numero_ocorrencia }}</h1>
+
+<!-- Ocorrência Section -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Detalhes da Ocorrência</h6>
+    </div>
+    <div class="card-body">
+        <!-- Linha 1: Número da Ocorrência -->
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="numero_ocorrencia">Número da Ocorrência</label>
+                <input type="text" class="form-control" id="numero_ocorrencia" value="{{ ocorrencia.numero_ocorrencia }}" readonly>
+            </div>
+        </div>
+
+        <!-- Linha 2: Entidade e Contato -->
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="entidade">Entidade</label>
+                <input type="text" class="form-control" id="entidade" value="{{ ocorrencia.entidade.municipio }}" readonly>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="contato">Contato</label>
+                <input type="text" class="form-control" id="contato" value="{{ ocorrencia.contato }}" readonly>
+            </div>
+        </div>
+
+        <!-- Linha 3: Prioridade e Tipo -->
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="prioridade">Prioridade</label>
+                <input type="text" class="form-control" id="prioridade" value="{{ ocorrencia.prioridade.descricao }}" readonly>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="tipo">Tipo</label>
+                <input type="text" class="form-control" id="tipo" value="{{ ocorrencia.tipo.descricao }}" readonly>
+            </div>
+        </div>
+
+        <!-- Linha 4: Software e Módulo -->
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="software">Software</label>
+                <input type="text" class="form-control" id="software" value="{{ ocorrencia.software.descricao }}" readonly>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="modulo">Módulo</label>
+                <input type="text" class="form-control" id="modulo" value="{{ ocorrencia.modulo.descricao }}" readonly>
+            </div>
+        </div>
+
+        <!-- Linha 5: Descrição -->
+        <div class="form-group">
+            <label for="descricao">Descrição</label>
+            <textarea class="form-control" id="descricao" rows="3" readonly>{{ ocorrencia.descricao }}</textarea>
+        </div>
+
+        <!-- Linha 6: Resolução -->
+        <div class="form-group">
+            <label for="resolucao">Resolução</label>
+            <textarea class="form-control" id="resolucao" rows="3" readonly>{{ ocorrencia.resolucao or 'N/A' }}</textarea>
+        </div>
+
+        <!-- Botão de Voltar -->
+        <a href="{{ url_for('main.pesquisa_atendimento') }}" class="btn btn-secondary">Voltar</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,21 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Novo Atendimento{% endblock %}
+{% block title %}
+    {% if ocorrencia and ocorrencia.numero_ocorrencia %}
+        Editar Ocorrência {{ ocorrencia.numero_ocorrencia }}
+    {% else %}
+        Nova Ocorrência
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 <!-- Page Heading -->
-<h1 class="h3 mb-4 text-gray-800">Novo Atendimento</h1>
+<h1 class="h3 mb-4 text-gray-800">
+    {% if ocorrencia and ocorrencia.numero_ocorrencia %}
+        Editar Ocorrência
+    {% else %}
+        Nova Ocorrência
+    {% endif %}
+</h1>
 
-<form method="POST" action="{{ url_for('main.nova_ocorrencia') }}" enctype="multipart/form-data">
+<form method="POST" action="{{ url_for('main.nova_ocorrencia') if not ocorrencia else url_for('main.editar_ocorrencia', id=ocorrencia.id) }}" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     
-    <!-- Linha 1: ID -->
+    <!-- Linha 1: Número da Ocorrência (somente na edição) -->
+    {% if ocorrencia and ocorrencia.numero_ocorrencia %}
     <div class="form-row">
         <div class="form-group col-md-4">
-            <label for="id">ID</label>
-            <input type="text" class="form-control" id="id" name="id" value="{{ id }}" readonly>
+            <label for="numero_ocorrencia">Número da Ocorrência</label>
+            <input type="text" class="form-control" id="numero_ocorrencia" name="numero_ocorrencia" value="{{ ocorrencia.numero_ocorrencia }}" readonly>
         </div>
     </div>
+    {% endif %}
     
     <!-- Linha 2: Entidade e Contato -->
     <div class="form-row">
@@ -73,6 +87,7 @@
     
     <!-- Botão de Salvar -->
     <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="{{ url_for('main.meus_atendimentos') }}" class="btn btn-secondary">Cancelar</a>
     
 </form>
 {% endblock %}

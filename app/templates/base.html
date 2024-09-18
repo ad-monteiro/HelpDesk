@@ -57,7 +57,7 @@
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.index') }}">
+                <a class="nav-link" href="{{ url_for('main.main_page') }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
@@ -71,6 +71,12 @@
                     <i class="fas fa-fw fa-headset"></i>
                     <span>Meus Atendimentos</span></a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{url_for('main.pesquisa_atendimento')}}">
+                    <i class="fas fa-fw fa-search"></i>
+                    <span>Pesquisar Atendimentos</span></a>
+            </li>        
 
             <!-- Nav Item - Solicitar Ligação -->
             <li class="nav-item">

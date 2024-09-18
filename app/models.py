@@ -78,8 +78,8 @@ class GrOcorrencia(db.Model):
     __tablename__ = 'gr_ocorrencia'
     id = db.Column(db.Integer, primary_key=True)
     numero_ocorrencia = db.Column(db.String(6), unique=True, nullable=False)
-    entidade_id = db.Column(db.Integer, db.ForeignKey('cad_entidade.id'), nullable=False)
-    entidade = db.relationship('CadEntidade', backref='ocorrencias')  # Adicione esta linha
+    entidade_id = db.Column(db.Integer, db.ForeignKey('cad_entidade.id'))
+    entidade = db.relationship('CadEntidade', backref='ocorrencias')
     contato = db.Column(db.String(255), nullable=False)
     prioridade_id = db.Column(db.Integer, db.ForeignKey('gr_prioridade.id'), nullable=False)
     prioridade = db.relationship('GrPrioridade', backref='ocorrencias')

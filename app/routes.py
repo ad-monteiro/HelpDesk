@@ -9,6 +9,7 @@ from datetime import datetime
 from . import db
 import requests, random
 from random import randint
+from flask_paginate import Pagination, get_page_args
 
 bcrypt = Bcrypt()
 
@@ -42,6 +43,12 @@ def logout():
     flash('Você saiu da sessão.', 'info')
     return redirect(url_for('main.login'))
 
+
+@main_bp.route('/main')
+def main_page():
+    return render_template('main.html')
+
+
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -69,28 +76,40 @@ def register():
 @main_bp.route('/')
 @login_required
 def index():
-    ocorrencias = GrOcorrencia.query.all()  # Carrega todas as ocorrências do banco de dados
-    return render_template('index.html', ocorrencias=ocorrencias)  # Passa as ocorrências para o template
+    return render_template('main.html')  # Passa as ocorrências para o template
 
 @main_bp.route('/ocorrencia/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
 def editar_ocorrencia(id):
     ocorrencia = GrOcorrencia.query.get_or_404(id)
     form = OcorrenciaForm(obj=ocorrencia)
-    
+
     if form.validate_on_submit():
-        form.populate_obj(ocorrencia)  # Preenche a ocorrência com os dados do formulário
+        # Preenche o objeto com os dados do formulário, exceto o número da ocorrência
+        ocorrencia.entidade_id = form.entidade.data
+        ocorrencia.contato = form.contato.data
+        ocorrencia.prioridade_id = form.prioridade.data
+        ocorrencia.tipo_id = form.tipo.data
+        ocorrencia.software_id = form.software.data
+        ocorrencia.modulo_id = form.modulo.data
+        ocorrencia.descricao = form.descricao.data
+        ocorrencia.resolucao = form.resolucao.data
+        
+        # Assegura que o número da ocorrência existente não seja alterado
+        ocorrencia.numero_ocorrencia = ocorrencia.numero_ocorrencia
         
         try:
-            db.session.commit()
+            db.session.commit()  # Comitar as mudanças no banco de dados
             flash('Ocorrência atualizada com sucesso!', 'success')
             return redirect(url_for('main.meus_atendimentos'))
         except Exception as e:
-            db.session.rollback()
+            db.session.rollback()  # Reverter em caso de erro
             app.logger.error(f'Erro ao atualizar ocorrência: {e}')
             flash('Erro ao atualizar ocorrência. Verifique os dados e tente novamente.', 'danger')
-    
-    return render_template('ocorrencia_form.html', form=form)
+
+    return render_template('ocorrencia_form.html', form=form, ocorrencia=ocorrencia)
+
+
 
 
 @main_bp.route('/ocorrencia/<int:id>/excluir', methods=['POST'])
@@ -133,12 +152,23 @@ def toggle_ativo(user_id):
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('index.html')
+    return render_template('main.html')
 
 @main_bp.route('/meus-atendimentos', methods=['GET'])
 @login_required
 def meus_atendimentos():
-    atendimentos = GrOcorrencia.query.filter_by(usuario_id=current_user.id).all()
+    
+    search_query = request.args.get('search', '').strip()
+    query = GrOcorrencia.query.filter_by(usuario_id=current_user.id)
+    
+    if search_query:
+        query = query.join(CadEntidade).filter(
+            (GrOcorrencia.numero_ocorrencia.ilike(f'%{search_query}%')) |
+            (CadEntidade.municipio.ilike(f'%{search_query}%')) |
+            (GrOcorrencia.data_criacao.ilike(f'%{search_query}%'))
+        )
+
+    atendimentos = GrOcorrencia.query.filter_by(usuario_id=current_user.id).order_by(GrOcorrencia.data_criacao.desc()).limit(5).all()
     return render_template('meus_atendimentos.html', atendimentos=atendimentos)
 
 @main_bp.route('/solicitar-ligacao')
@@ -454,3 +484,33 @@ def nova_ocorrencia():
         return redirect(url_for('main.index'))
     
     return render_template('ocorrencia_form.html', form=form)
+
+
+@main_bp.route('/pesquisa-atendimento', methods=['GET'])
+@login_required
+def pesquisa_atendimento():
+    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+    per_page = 15
+    search_query = request.args.get('search', '')
+    filter_conditions = [GrOcorrencia.usuario_id == current_user.id]
+    
+    if search_query:
+        filter_conditions.append(
+            (GrOcorrencia.numero_ocorrencia.ilike(f'%{search_query}%')) |
+            (GrOcorrencia.entidade.has(CadEntidade.municipio.ilike(f'%{search_query}%'))) |
+            (GrOcorrencia.prioridade.has(GrPrioridade.descricao.ilike(f'%{search_query}%'))) |
+            (GrOcorrencia.tipo.has(CadTpOcorrencia.descricao.ilike(f'%{search_query}%')))
+        )
+
+    atendimentos = GrOcorrencia.query.filter(*filter_conditions).order_by(GrOcorrencia.data_criacao.desc()).offset(offset).limit(per_page).all()
+    total = GrOcorrencia.query.filter(*filter_conditions).count()
+    
+    pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap4')
+
+    return render_template('pesquisa_atendimento.html', atendimentos=atendimentos, page=page, per_page=per_page, pagination=pagination)
+
+@main_bp.route('/ocorrencia/<int:id>/visualizar', methods=['GET'])
+@login_required
+def visualizar_ocorrencia(id):
+    ocorrencia = GrOcorrencia.query.get_or_404(id)  # Busca a ocorrência ou retorna 404 se não existir
+    return render_template('visualizar_ocorrencia.html', ocorrencia=ocorrencia)

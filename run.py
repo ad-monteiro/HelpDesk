@@ -4,14 +4,13 @@ from logging.handlers import RotatingFileHandler
 
 app = create_app()
 
+if __name__ == '__main__':
+    app.run(debug=True)
+
 @app.cli.command('create-db')
 def create_db():
     db.create_all()
     print("Banco de dados criado com sucesso!")
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
 
 if not app.debug:
     # Configurar o arquivo de log
