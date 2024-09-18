@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Usuários</title>
+</head>
+<body>
+    <h1>Gerenciar Usuários</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Telefone</th>
+                <th>Perfil</th>
+                <th>Status</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios %}
+            <tr>
+                <td>{{ usuario.nome }}</td>
+                <td>{{ usuario.email }}</td>
+                <td>{{ usuario.telefone }}</td>
+                <td>{{ usuario.perfil }}</td>
+                <td>{{ "Ativo" if usuario.ativo else "Inativo" }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('main.toggle_ativo', user_id=usuario.id) }}">
+                        <button type="submit">{{ "Desativar" if usuario.ativo else "Ativar" }}</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

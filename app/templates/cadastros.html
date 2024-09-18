@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastros{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800">Cadastros</h1>
+
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'tipo-entidade' %}active{% endif %}" id="tipo-entidade-tab" data-toggle="tab" href="#tipo-entidade" role="tab" aria-controls="tipo-entidade" aria-selected="true">Tipo Entidade</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'entidade' %}active{% endif %}" id="entidade-tab" data-toggle="tab" href="#entidade" role="tab" aria-controls="entidade" aria-selected="false">Entidade</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'software' %}active{% endif %}" id="software-tab" data-toggle="tab" href="#software" role="tab" aria-controls="software" aria-selected="false">Software</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'modulo' %}active{% endif %}" id="modulo-tab" data-toggle="tab" href="#modulo" role="tab" aria-controls="modulo" aria-selected="false">Módulos</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'prioridade' %}active{% endif %}" id="prioridade-tab" data-toggle="tab" href="#prioridade" role="tab" aria-controls="prioridade" aria-selected="false">Prioridade</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'tipo-ocorrencia' %}active{% endif %}" id="tipo-ocorrencia-tab" data-toggle="tab" href="#tipo-ocorrencia" role="tab" aria-controls="tipo-ocorrencia" aria-selected="false">Tipo de Ocorrência</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'carro' %}active{% endif %}" id="carro-tab" data-toggle="tab" href="#carro" role="tab" aria-controls="carro" aria-selected="false">Carro</a>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="myTabContent">
+
+    <!-- Tipo Entidade -->
+    <div class="tab-pane fade {% if active_tab == 'tipo-entidade' %}show active{% endif %}" id="tipo-entidade" role="tabpanel" aria-labelledby="tipo-entidade-tab">
+        <form method="POST" action="{{ url_for('main.cadastrar_tipo_entidade') }}">
+            {{ tipo_entidade_form.hidden_tag() }}
+            <input type="hidden" name="active_tab" value="tipo-entidade">
+            <div class="form-group">
+                <label for="descricao">Descrição</label>
+                {{ tipo_entidade_form.descricao(class_="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+        <!-- Listagem de tipos de entidade -->
+        <h4 class="mt-4">Tipos de Entidade Cadastrados</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Descrição</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tipo_entidade in tipos_entidade %}
+                <tr>
+                    <td>{{ tipo_entidade.id }}</td>
+                    <td>{{ tipo_entidade.descricao }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Entidade -->
+    <div class="tab-pane fade {% if active_tab == 'entidade' %}show active{% endif %}" id="entidade" role="tabpanel" aria-labelledby="entidade-tab">
+        <form method="POST" action="{{ url_for('main.cadastrar_entidade') }}">
+            {{ entidade_form.hidden_tag() }}
+            <input type="hidden" name="active_tab" value="entidade">
+            <div class="form-group">
+                <label for="municipio">Município</label>
+                {{ entidade_form.municipio(class_="form-control", id="municipio") }}
+            </div>           
+            <div class="form-group">
+                <label for="tipo_entidade">Tipo de Entidade</label>
+                {{ entidade_form.tipo_entidade(class_="form-control") }}
+            </div>
+            <div class="form-group">
+                <label for="cnpj">CNPJ</label>
+                {{ entidade_form.cnpj(class_="form-control", id="cnpj-input") }}
+            </div>
+            <div class="form-group">
+                <label for="endereco">Endereço</label>
+                {{ entidade_form.endereco(class_="form-control", id="endereco") }}
+            </div>
+            <div class="form-group">
+                <label for="telefone">Telefone</label>
+                {{ entidade_form.telefone(class_="form-control", id="telefone") }}
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+        <!-- Listagem de entidades -->
+        <h4 class="mt-4">Entidades Cadastradas</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Município</th>
+                    <th>Tipo de Entidade</th>
+                    <th>CNPJ</th>
+                    <th>Endereço</th>
+                    <th>Telefone</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entidade in entidades %}
+                <tr>
+                    <td>{{ entidade.id }}</td>
+                    <td>{{ entidade.municipio }}</td>
+                    <td>{{ entidade.tipo_entidade.descricao }}</td>
+                    <td>{{ entidade.cnpj }}</td>
+                    <td>{{ entidade.endereco }}</td>
+                    <td>{{ entidade.telefone }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Software -->
+    <div class="tab-pane fade {% if active_tab == 'software' %}show active{% endif %}" id="software" role="tabpanel" aria-labelledby="software-tab">
+        <form method="POST" action="{{ url_for('main.cadastrar_software') }}">
+            {{ software_form.hidden_tag() }}
+            <input type="hidden" name="active_tab" value="software">
+            <div class="form-group">
+                <label for="descricao">Descrição</label>
+                {{ software_form.descricao(class_="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+        <!-- Listagem de softwares -->
+        <h4 class="mt-4">Softwares Cadastrados</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Descrição</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for software in softwares %}
+                <tr>
+                    <td>{{ software.id }}</td>
+                    <td>{{ software.descricao }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Módulos -->
+    <div class="tab-pane fade {% if active_tab == 'modulo' %}show active{% endif %}" id="modulo" role="tabpanel" aria-labelledby="modulo-tab">
+        <form method="POST" action="{{ url_for('main.cadastrar_modulo') }}">
+            {{ modulo_form.hidden_tag() }}
+            <input type="hidden" name="active_tab" value="modulo">
+            <div class="form-group">
+                <label for="software">Software</label>
+                {{ modulo_form.software(class_="form-control") }}
+            </div>
+            <div class="form-group">
+                <label for="descricao">Descrição</label>
+                {{ modulo_form.descricao(class_="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+        <!-- Listagem de módulos -->
+        <h4 class="mt-4">Módulos Cadastrados</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Software</th>
+                    <th>Descrição</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for modulo in modulos %}
+                <tr>
+                    <td>{{ modulo.id }}</td>
+                    <td>{{ modulo.software.descricao }}</td>
+                    <td>{{ modulo.descricao }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Prioridade -->
+    <div class="tab-pane fade {% if active_tab == 'prioridade' %}show active{% endif %}" id="prioridade" role="tabpanel" aria-labelledby="prioridade-tab">
+        <form method="POST" action="{{ url_for('main.cadastrar_prioridade') }}">
+            {{ prioridade_form.hidden_tag() }}
+            <input type="hidden" name="active_tab" value="prioridade">
+            <div class="form-group">
+                <label for="descricao">Descrição</label>
+                {{ prioridade_form.descricao(class_="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+        <!-- Listagem de prioridades -->
+        <h4 class="mt-4">Prioridades Cadastradas</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Descrição</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prioridade in prioridades %}
+                <tr>
+                    <td>{{ prioridade.id }}</td>
+                    <td>{{ prioridade.descricao }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Tipo Ocorrência -->
+    <div class="tab-pane fade {% if active_tab == 'tipo-ocorrencia' %}show active{% endif %}" id="tipo-ocorrencia" role="tabpanel" aria-labelledby="tipo-ocorrencia-tab">
+        <form method="POST" action="{{ url_for('main.cadastrar_tipo_ocorrencia') }}">
+            {{ tipo_ocorrencia_form.hidden_tag() }}
+            <input type="hidden" name="active_tab" value="tipo-ocorrencia">
+            <div class="form-group">
+                <label for="descricao">Descrição</label>
+                {{ tipo_ocorrencia_form.descricao(class_="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+        <!-- Listagem de tipos de ocorrências -->
+        <h4 class="mt-4">Tipos de Ocorrência Cadastrados</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Descrição</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tipo_ocorrencia in tipos_ocorrencia %}
+                <tr>
+                    <td>{{ tipo_ocorrencia.id }}</td>
+                    <td>{{ tipo_ocorrencia.descricao }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Carro -->
+    <div class="tab-pane fade {% if active_tab == 'carro' %}show active{% endif %}" id="carro" role="tabpanel" aria-labelledby="carro-tab">
+        <form method="POST" action="{{ url_for('main.cadastrar_carro') }}">
+            {{ carro_form.hidden_tag() }}
+            <input type="hidden" name="active_tab" value="carro">
+            <div class="form-group">
+                <label for="modelo">Modelo</label>
+                {{ carro_form.modelo(class_="form-control") }}
+            </div>
+            <div class="form-group">
+                <label for="marca">Marca</label>
+                {{ carro_form.marca(class_="form-control") }}
+            </div>
+            <div class="form-group">
+                <label for="ano">Ano</label>
+                {{ carro_form.ano(class_="form-control") }}
+            </div>
+            <div class="form-group">
+                <label for="placa">Placa</label>
+                {{ carro_form.placa(class_="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+        <!-- Listagem de carros -->
+        <h4 class="mt-4">Carros Cadastrados</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Modelo</th>
+                    <th>Marca</th>
+                    <th>Ano</th>
+                    <th>Placa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for carro in carros %}
+                <tr>
+                    <td>{{ carro.id }}</td>
+                    <td>{{ carro.modelo }}</td>
+                    <td>{{ carro.marca }}</td>
+                    <td>{{ carro.ano }}</td>
+                    <td>{{ carro.placa }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

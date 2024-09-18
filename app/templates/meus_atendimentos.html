@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Meus Atendimentos{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<h1 class="h3 mb-4 text-gray-800">Meus Atendimentos</h1>
+
+<!-- Atendimentos Section -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Lista de Atendimentos</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Número Ocorrência</th>
+                        <th>Entidade</th>
+                        <th>Prioridade</th>
+                        <th>Data</th>
+                        <th>Tipo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for atendimento in atendimentos %}
+                            <tr onclick="window.location='{{ url_for('main.editar_ocorrencia', id=atendimento.id) }}';" style="cursor:pointer;">
+                            <td>{{ atendimento.numero_ocorrencia }}</td>
+                            <td>{{ atendimento.entidade.entidade }}</td>
+                            <td>{{ atendimento.prioridade.descricao }}</td>
+                            <td>{{ atendimento.data_criacao.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ atendimento.tipo.descricao }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <a href="{{ url_for('main.nova_ocorrencia') }}" class="btn btn-primary btn-sm mt-3">Nova Ocorrência</a>
+    </div>
+</div>
+{% endblock %}
