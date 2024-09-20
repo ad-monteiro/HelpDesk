@@ -331,13 +331,13 @@ def cadastros():
     # Código para salvar entidades, software, módulos, etc.
 
     # Carregar dados para as tabelas
-    tipos_entidade = TpEntidade.query.all()
-    entidades = CadEntidade.query.all()
-    softwares = CadSoftware.query.all()
-    modulos = CadModulo.query.all()
-    prioridades = GrPrioridade.query.all()
-    tipos_ocorrencia = CadTpOcorrencia.query.all()
-    carros = CadCarro.query.all()
+    tipos_entidade = TpEntidade.query.order_by(TpEntidade.id.asc()).all()
+    entidades = CadEntidade.query.order_by(CadEntidade.id.asc()).all()
+    softwares = CadSoftware.query.order_by(CadSoftware.id.asc()).all()
+    modulos = CadModulo.query.order_by(CadModulo.id.asc()).all()
+    prioridades = GrPrioridade.query.order_by(GrPrioridade.id.asc()).all()
+    tipos_ocorrencia = CadTpOcorrencia.query.order_by(CadTpOcorrencia.id.asc()).all()
+    carros = CadCarro.query.order_by(CadCarro.id.asc()).all()
 
     return render_template('cadastros.html',
                            tipo_entidade_form=tipo_entidade_form,
@@ -366,26 +366,33 @@ def agendar_viagem():
 def novo_tipo_entidade():
     form = TipoEntidadeForm()
     if form.validate_on_submit():
-        tipo_entidade = TpEntidade(descricao=form.descricao.data)
+        tipo_entidade = TpEntidade(
+            descricao=form.descricao.data,
+            abreviacao=form.abreviacao.data)
         db.session.add(tipo_entidade)
         db.session.commit()
         flash('Tipo de entidade criado com sucesso!', 'success')
         return redirect(url_for('main.cadastros', active_tab='tipo-entidade'))
+    
     return render_template('tipo_entidade_form.html', form=form)
 
 @main_bp.route('/tipo-entidade/<int:id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_tipo_entidade(id):
-    tipo_entidade = TpEntidade.query.get_or_404(id)
-    form = TipoEntidadeForm(obj=tipo_entidade)
+    tipo_entidade = TpEntidade.query.get_or_404(id)  # Busca o registro existente
+    form = TipoEntidadeForm(obj=tipo_entidade)  # Vincula o formulário com o objeto existente
 
-    if form.validate_on_submit():
+    if form.validate_on_submit():  # Se o formulário for válido após o envio
+        # Atualiza os campos do objeto, sem a vírgula
         tipo_entidade.descricao = form.descricao.data
+        tipo_entidade.abreviacao = form.abreviacao.data
+        
+        # Confirma a transação no banco de dados
         db.session.commit()
         flash('Tipo de entidade atualizado com sucesso!', 'success')
-        return redirect(url_for('main.cadastros', active_tab='tipo-entidade'))
-
+        return redirect(url_for('main.cadastros', active_tab='tipo-entidade'))  # Redireciona após o sucesso
     return render_template('tipo_entidade_form.html', form=form, tipo_entidade=tipo_entidade)
+
 
 @main_bp.route('/software/novo', methods=['GET', 'POST'])
 @login_required

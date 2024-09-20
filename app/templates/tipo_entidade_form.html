@@ -1,14 +1,35 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Cadastrar Tipo de Entidade</h1>
-    <form method="POST" action="{{ url_for('main.novo_tipo_entidade') }}">
+    <h1>
+        {% if tipo_entidade and tipo_entidade.id %}
+            Editar Tipo de Entidade
+        {% else %}
+            Cadastrar Tipo de Entidade
+        {% endif %}
+    </h1>
+
+    <form method="POST" action="{% if tipo_entidade and tipo_entidade.id %}{{ url_for('main.editar_tipo_entidade', id=tipo_entidade.id) }}{% else %}{{ url_for('main.novo_tipo_entidade') }}{% endif %}">
         {{ form.hidden_tag() }}
+        
         <div class="form-group">
             <label for="descricao">Descrição</label>
             {{ form.descricao(class_="form-control") }}
         </div>
-        <button type="submit" class="btn btn-primary">Salvar</button>
+        
+        <div class="form-group">
+            <label for="abreviacao">Abreviação</label>
+            {{ form.abreviacao(class_="form-control") }} 
+        </div>
+        
+        <button type="submit" class="btn btn-primary">
+            {% if tipo_entidade and tipo_entidade.id %}
+                Atualizar
+            {% else %}
+                Salvar
+            {% endif %}
+        </button>
+
         <a href="{{ url_for('main.cadastros', active_tab='tipo-entidade') }}" class="btn btn-secondary">Cancelar</a>
     </form>
 {% endblock %}

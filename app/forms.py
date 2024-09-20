@@ -60,6 +60,7 @@ class EntidadeForm(FlaskForm):
 
 class TipoEntidadeForm(FlaskForm):
     descricao = StringField('Descrição', validators=[DataRequired()])
+    abreviacao = StringField('Abreviação', validators=[DataRequired()])
     submit = SubmitField('Salvar')
 
 class SoftwareForm(FlaskForm):

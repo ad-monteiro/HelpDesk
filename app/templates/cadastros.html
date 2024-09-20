@@ -33,6 +33,8 @@
  <div class="tab-content" id="cadastrosTabContent">
     <!-- Tipo de Entidade -->
     <div class="tab-pane fade {% if active_tab == 'tipo-entidade' %}show active{% endif %}" id="tipo-entidade" role="tabpanel" aria-labelledby="tipo-entidade-tab">
+        <h4></h4>
+        <h4></h4>
         <a href="{{ url_for('main.novo_tipo_entidade') }}" class="btn btn-primary mb-4">Novo</a>
         <h4>Tipos de Entidade Cadastrados</h4>
         <table class="table table-bordered">
@@ -40,7 +42,8 @@
                 <tr>
                     <th>ID</th>
                     <th>Descrição</th>
-                    <th>Ações</th>
+                    <th>Abreviação</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -48,6 +51,7 @@
                 <tr>
                     <td>{{ tipo.id }}</td>
                     <td>{{ tipo.descricao }}</td>
+                    <td>{{ tipo.abreviacao }}
                     <td>
                         <a href="{{ url_for('main.editar_tipo_entidade', id=tipo.id) }}" class="btn btn-warning btn-sm">Editar</a>
                     </td>
@@ -59,14 +63,15 @@
 
     <!-- Entidade -->
     <div class="tab-pane fade {% if active_tab == 'entidade' %}show active{% endif %}" id="entidade" role="tabpanel" aria-labelledby="entidade-tab">
+        <h4></h4>
+        <h4></h4>
         <a href="{{ url_for('main.nova_entidade') }}" class="btn btn-primary mb-4">Novo</a>
         <h4>Entidades Cadastradas</h4>
         <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Município</th>
-                    <th>Tipo de Entidade</th>
+                    <th>Entidade</th>
                     <th>CNPJ</th>
                     <th>Endereço</th>
                     <th>Telefone</th>
@@ -77,8 +82,7 @@
                 {% for entidade in entidades %}
                 <tr>
                     <td>{{ entidade.id }}</td>
-                    <td>{{ entidade.municipio }}</td>
-                    <td>{{ entidade.tipo_entidade.descricao }}</td>
+                    <td>{{ entidade.tipo_entidade.abreviacao }} {{ entidade.municipio }}</td>
                     <td>{{ entidade.cnpj }}</td>
                     <td>{{ entidade.endereco }}</td>
                     <td>{{ entidade.telefone }}</td>
@@ -93,6 +97,8 @@
 
     <!-- Softwares -->
     <div class="tab-pane fade {% if active_tab == 'software' %}show active{% endif %}" id="software" role="tabpanel" aria-labelledby="software-tab">
+        <h4></h4>
+        <h4></h4>
         <a href="{{ url_for('main.novo_software') }}" class="btn btn-primary mb-4">Novo</a>
         <h4>Softwares Cadastrados</h4>
         <table class="table table-bordered">
@@ -119,6 +125,8 @@
     
 <!-- Módulos -->
 <div class="tab-pane fade {% if active_tab == 'modulo' %}show active{% endif %}" id="modulo" role="tabpanel" aria-labelledby="modulo-tab">
+    <h4></h4>
+    <h4></h4>
     <a href="{{ url_for('main.novo_modulo') }}" class="btn btn-primary mb-4">Novo</a>
     <h4>Módulos Cadastrados</h4>
     <table class="table table-bordered">
@@ -147,6 +155,8 @@
 
 <!-- Prioridade -->
 <div class="tab-pane fade {% if active_tab == 'prioridade' %}show active{% endif %}" id="prioridade" role="tabpanel" aria-labelledby="prioridade-tab">
+    <h4></h4>
+    <h4></h4>
     <a href="{{ url_for('main.nova_prioridade') }}" class="btn btn-primary mb-4">Novo</a>
     <h4>Prioridades Cadastradas</h4>
     <table class="table table-bordered">
@@ -173,6 +183,8 @@
 
 <!-- Tipo Ocorrência -->
 <div class="tab-pane fade {% if active_tab == 'tipo-ocorrencia' %}show active{% endif %}" id="tipo-ocorrencia" role="tabpanel" aria-labelledby="tipo-ocorrencia-tab">
+    <h4></h4>
+    <h4></h4>
     <a href="{{ url_for('main.novo_tipo_ocorrencia') }}" class="btn btn-primary mb-4">Novo</a>
     <h4>Tipos de Ocorrência Cadastrados</h4>
     <table class="table table-bordered">
@@ -199,6 +211,8 @@
 
 <!-- Carro -->
 <div class="tab-pane fade {% if active_tab == 'carro' %}show active{% endif %}" id="carro" role="tabpanel" aria-labelledby="carro-tab">
+    <h4></h4>
+    <h4></h4>
     <a href="{{ url_for('main.novo_carro') }}" class="btn btn-primary mb-4">Novo</a>
     <h4>Carros Cadastrados</h4>
     <table class="table table-bordered">
