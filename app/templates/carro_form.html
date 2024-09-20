@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Cadastrar Carro</h1>
+    <form method="POST" action="{{ url_for('main.novo_carro') }}">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            <label for="modelo">Modelo</label>
+            {{ form.modelo(class_="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="marca">Marca</label>
+            {{ form.marca(class_="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="ano">Ano</label>
+            {{ form.ano(class_="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="placa">Placa</label>
+            {{ form.placa(class_="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{{ url_for('main.cadastros', active_tab='carro') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+{% endblock %}

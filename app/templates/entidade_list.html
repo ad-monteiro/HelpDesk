@@ -1,0 +1,37 @@
+<!-- entidade_list.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listagem de Entidades</title>
+</head>
+<body>
+    <h1>Entidades Cadastradas</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Município</th>
+                <th>CNPJ</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entidade in entidades %}
+            <tr>
+                <td>{{ entidade.id }}</td>
+                <td>{{ entidade.nome }}</td>
+                <td>{{ entidade.municipio }}</td>
+                <td>{{ entidade.cnpj }}</td>
+                <td>
+                    <a href="{{ url_for('main.editar_entidade', id=entidade.id) }}">Editar</a>
+                    <a href="{{ url_for('main.excluir_entidade', id=entidade.id) }}" onclick="return confirm('Tem certeza que deseja excluir esta entidade?');">Excluir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

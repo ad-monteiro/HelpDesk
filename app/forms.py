@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, EmailField, ValidationError
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, EmailField, ValidationError, HiddenField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 from .models import Usuario, CadEntidade, GrPrioridade, CadTpOcorrencia, CadSoftware, CadModulo, TpEntidade
 
@@ -47,11 +47,12 @@ class RegisterForm(FlaskForm):
             raise ValidationError('E-mail já cadastrado. Use outro e-mail.')
 
 class EntidadeForm(FlaskForm):
+    id = HiddenField()
     municipio = StringField('Município', validators=[DataRequired()])
-    tipo_entidade = SelectField('Tipo de Entidade', coerce=int, validators=[DataRequired()])
+    tipo_entidade = SelectField('Tipo de Entidade', coerce=int)
     cnpj = StringField('CNPJ', validators=[DataRequired()])
     endereco = StringField('Endereço', validators=[DataRequired()])
-    telefone = StringField('Telefone')
+    telefone = StringField('Telefone', validators=[DataRequired()])
 
     def __init__(self, *args, **kwargs):
         super(EntidadeForm, self).__init__(*args, **kwargs)

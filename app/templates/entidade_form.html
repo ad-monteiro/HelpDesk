@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{% if form.id.data %}Editar Entidade{% else %}Cadastrar Entidade{% endif %}</h1>
+    
+    <form method="POST" action="{% if form.id.data %}{{ url_for('main.editar_entidade', id=form.id.data) }}{% else %}{{ url_for('main.nova_entidade') }}{% endif %}">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            <label for="municipio">Município</label>
+            {{ form.municipio(class_="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="tipo_entidade">Tipo de Entidade</label>
+            {{ form.tipo_entidade(class_="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="cnpj">CNPJ</label>
+            {{ form.cnpj(class_="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="endereco">Endereço</label>
+            {{ form.endereco(class_="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="telefone">Telefone</label>
+            {{ form.telefone(class_="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">{% if form.id.data %}Atualizar{% else %}Salvar{% endif %}</button>
+        <a href="{{ url_for('main.cadastros', active_tab='entidade') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+{% endblock %}

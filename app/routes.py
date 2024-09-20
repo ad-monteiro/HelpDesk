@@ -15,11 +15,11 @@ bcrypt = Bcrypt()
 
 main_bp = Blueprint('main', __name__)
 
+# Rotas principais
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-
     form = LoginForm()
     if form.validate_on_submit():
         user = Usuario.query.filter_by(email=form.email.data).first()
@@ -36,19 +36,6 @@ def login():
             flash('Login ou senha incorretos.', 'danger')
     return render_template('login.html', form=form)
 
-@main_bp.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash('Você saiu da sessão.', 'info')
-    return redirect(url_for('main.login'))
-
-
-@main_bp.route('/main')
-def main_page():
-    return render_template('main.html')
-
-
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -64,7 +51,7 @@ def register():
             autorizado=False,
             ativo=True
         )
-        user.set_senha(form.password.data)  # Usando o método do modelo para criar o hash da senha
+        user.set_senha(form.password.data)
         db.session.add(user)
         db.session.commit()
         flash('Cadastro realizado com sucesso! Aguarde a autorização do administrador.', 'success')
@@ -73,382 +60,30 @@ def register():
     return render_template('register.html', form=form)
 
 
+@main_bp.route('/forgot-password')
+def forgot_password():
+    # Página de recuperação de senha - Implementação futura
+    return render_template('forgot_password.html')  # Você pode criar um template para recuperação de senha no futuro.
+
+@main_bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Você saiu da sessão.', 'info')
+    return redirect(url_for('main.login'))
+
 @main_bp.route('/')
 @login_required
 def index():
-    return render_template('main.html')  # Passa as ocorrências para o template
-
-@main_bp.route('/ocorrencia/editar/<int:id>', methods=['GET', 'POST'])
-@login_required
-def editar_ocorrencia(id):
-    ocorrencia = GrOcorrencia.query.get_or_404(id)
-    form = OcorrenciaForm(obj=ocorrencia)
-
-    if form.validate_on_submit():
-        # Preenche o objeto com os dados do formulário, exceto o número da ocorrência
-        ocorrencia.entidade_id = form.entidade.data
-        ocorrencia.contato = form.contato.data
-        ocorrencia.prioridade_id = form.prioridade.data
-        ocorrencia.tipo_id = form.tipo.data
-        ocorrencia.software_id = form.software.data
-        ocorrencia.modulo_id = form.modulo.data
-        ocorrencia.descricao = form.descricao.data
-        ocorrencia.resolucao = form.resolucao.data
-        
-        # Assegura que o número da ocorrência existente não seja alterado
-        ocorrencia.numero_ocorrencia = ocorrencia.numero_ocorrencia
-        
-        try:
-            db.session.commit()  # Comitar as mudanças no banco de dados
-            flash('Ocorrência atualizada com sucesso!', 'success')
-            return redirect(url_for('main.meus_atendimentos'))
-        except Exception as e:
-            db.session.rollback()  # Reverter em caso de erro
-            app.logger.error(f'Erro ao atualizar ocorrência: {e}')
-            flash('Erro ao atualizar ocorrência. Verifique os dados e tente novamente.', 'danger')
-
-    return render_template('ocorrencia_form.html', form=form, ocorrencia=ocorrencia)
-
-
-
-
-@main_bp.route('/ocorrencia/<int:id>/excluir', methods=['POST'])
-@login_required
-def excluir_ocorrencia(id):
-    ocorrencia = GrOcorrencia.query.get_or_404(id)
-    db.session.delete(ocorrencia)
-    db.session.commit()
-    flash('Ocorrência excluída com sucesso!', 'success')
-    return redirect(url_for('main.index'))
-
-@main_bp.route('/forgot-password')
-def forgot_password():
-    # Implementação futura
-    return "Página de recuperação de senha - Em construção"
-
-@main_bp.route('/admin/gerenciar-usuarios')
-@login_required
-def gerenciar_usuarios():
-    if current_user.perfil != 'admin':
-        flash('Acesso negado: você não tem permissão para acessar esta página.', 'danger')
-        return redirect(url_for('main.index'))
-
-    usuarios = Usuario.query.all()
-    return render_template('gerenciar_usuarios.html', usuarios=usuarios)
-
-@main_bp.route('/admin/toggle-ativo/<int:user_id>', methods=['POST'])
-@login_required
-def toggle_ativo(user_id):
-    if current_user.perfil != 'admin':
-        flash('Acesso negado: você não tem permissão para acessar esta página.', 'danger')
-        return redirect(url_for('main.index'))
-
-    usuario = Usuario.query.get_or_404(user_id)
-    usuario.ativo = not usuario.ativo
-    db.session.commit()
-    flash(f'Usuário {"ativado" if usuario.ativo else "desativado"} com sucesso.', 'success')
-    return redirect(url_for('main.gerenciar_usuarios'))
-
-@main_bp.route('/dashboard')
-@login_required
-def dashboard():
     return render_template('main.html')
 
-@main_bp.route('/meus-atendimentos', methods=['GET'])
-@login_required
-def meus_atendimentos():
-    
-    search_query = request.args.get('search', '').strip()
-    query = GrOcorrencia.query.filter_by(usuario_id=current_user.id)
-    
-    if search_query:
-        query = query.join(CadEntidade).filter(
-            (GrOcorrencia.numero_ocorrencia.ilike(f'%{search_query}%')) |
-            (CadEntidade.municipio.ilike(f'%{search_query}%')) |
-            (GrOcorrencia.data_criacao.ilike(f'%{search_query}%'))
-        )
-
-    atendimentos = GrOcorrencia.query.filter_by(usuario_id=current_user.id).order_by(GrOcorrencia.data_criacao.desc()).limit(5).all()
-    return render_template('meus_atendimentos.html', atendimentos=atendimentos)
-
-@main_bp.route('/solicitar-ligacao')
-@login_required
-def solicitar_ligacao():
-    return render_template('solicitar_ligacao.html')
-
-@main_bp.route('/agendar-viagem')
-@login_required
-def agendar_viagem():
-    return render_template('agendar_viagem.html')
-
-@main_bp.route('/cadastros', methods=['GET', 'POST'])
-@login_required
-def cadastros():
-    active_tab = request.form.get('active_tab', 'tipo-entidade')
-    
-    # Forms
-    tipo_entidade_form = TipoEntidadeForm()
-    entidade_form = EntidadeForm()
-    entidade_form.tipo_entidade.choices = [(tipo.id, tipo.descricao) for tipo in TpEntidade.query.all()]
-    
-    software_form = SoftwareForm()
-    modulo_form = ModuloForm()
-    modulo_form.software.choices = [(software.id, software.descricao) for software in CadSoftware.query.all()]
-    prioridade_form = PrioridadeForm()
-    tipo_ocorrencia_form = TipoOcorrenciaForm()
-    carro_form = CarroForm()
-    
-    # Verificar se um formulário específico foi submetido
-    if tipo_entidade_form.validate_on_submit():
-        # Código para salvar Tipo Entidade
-        tipo_entidade = TpEntidade(descricao=tipo_entidade_form.descricao.data)
-        db.session.add(tipo_entidade)
-        db.session.commit()
-        active_tab = 'tipo-entidade'
-        flash('Tipo de entidade cadastrado com sucesso!', 'success')
-        
-    elif entidade_form.validate_on_submit():
-        # Código para salvar Entidade
-        entidade = CadEntidade(
-            municipio=entidade_form.municipio.data,
-            tipo_entidade_id=entidade_form.tipo_entidade.data,
-            cnpj=entidade_form.cnpj.data,
-            endereco=entidade_form.endereco.data,
-            telefone=entidade_form.telefone.data
-        )
-        db.session.add(entidade)
-        db.session.commit()
-        active_tab = 'entidade'
-        flash('Entidade cadastrada com sucesso!', 'success')
-        
-    elif software_form.validate_on_submit():
-        # Código para salvar Software
-        software = CadSoftware(descricao=software_form.descricao.data)
-        db.session.add(software)
-        db.session.commit()
-        active_tab = 'software'
-        flash('Software cadastrado com sucesso!', 'success')
-        
-    elif modulo_form.validate_on_submit():
-        # Código para salvar Módulo
-        modulo = CadModulo(
-            descricao=modulo_form.descricao.data,
-            software_id=modulo_form.software.data
-        )
-        db.session.add(modulo)
-        db.session.commit()
-        active_tab = 'modulo'
-        flash('Módulo cadastrado com sucesso!', 'success')
-        
-    elif prioridade_form.validate_on_submit():
-        # Código para salvar Prioridade
-        prioridade = GrPrioridade(
-            descricao=prioridade_form.descricao.data,
-            prazo=prioridade_form.prazo.data
-        )
-        db.session.add(prioridade)
-        db.session.commit()
-        active_tab = 'prioridade'
-        flash('Prioridade cadastrada com sucesso!', 'success')
-        
-    elif tipo_ocorrencia_form.validate_on_submit():
-        # Código para salvar Tipo Ocorrência
-        tipo_ocorrencia = CadTpOcorrencia(descricao=tipo_ocorrencia_form.descricao.data)
-        db.session.add(tipo_ocorrencia)
-        db.session.commit()
-        active_tab = 'tipo-ocorrencia'
-        flash('Tipo de ocorrência cadastrado com sucesso!', 'success')
-        
-    elif carro_form.validate_on_submit():
-        # Código para salvar Carro
-        carro = CadCarro(
-            nome=carro_form.nome.data,
-            placa=carro_form.placa.data
-        )
-        db.session.add(carro)
-        db.session.commit()
-        active_tab = 'carro'
-        flash('Carro cadastrado com sucesso!', 'success')
-    
-    # Carregar dados para os selects e tabelas
-    tipos_entidade = TpEntidade.query.all()
-    entidades = CadEntidade.query.all()
-    softwares = CadSoftware.query.all()
-    modulos = CadModulo.query.all()
-    prioridades = GrPrioridade.query.all()
-    tipos_ocorrencia = CadTpOcorrencia.query.all()
-    carros = CadCarro.query.all()
-    
-    return render_template('cadastros.html',
-                           tipo_entidade_form=tipo_entidade_form,
-                           entidade_form=entidade_form,
-                           software_form=software_form,
-                           modulo_form=modulo_form,
-                           prioridade_form=prioridade_form,
-                           tipo_ocorrencia_form=tipo_ocorrencia_form,
-                           carro_form=carro_form,
-                           tipos_entidade=tipos_entidade,
-                           entidades=entidades,
-                           softwares=softwares,
-                           modulos=modulos,
-                           prioridades=prioridades,
-                           tipos_ocorrencia=tipos_ocorrencia,
-                           carros=carros,
-                           active_tab=active_tab)
-# Rotas para cada cadastro
-
-@main_bp.route('/cadastro/entidade', methods=['POST'])
-@login_required
-def cadastrar_entidade():
-    form = EntidadeForm()
-    if form.validate_on_submit():
-        app.logger.info(f'Recebido formulário: {form.data}')
-        nova_entidade = CadEntidade(
-            municipio=form.municipio.data,
-            tipo_entidade_id=form.tipo_entidade.data,
-            cnpj=form.cnpj.data,
-            endereco=form.endereco.data,
-            telefone=form.telefone.data
-        )
-        try:
-            db.session.add(nova_entidade)
-            db.session.commit()
-            app.logger.info(f'Entidade inserida: {nova_entidade}')
-            flash('Entidade cadastrada com sucesso!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            app.logger.error(f'Erro ao inserir entidade: {e}')
-            flash('Erro ao cadastrar entidade. Verifique os dados e tente novamente.', 'danger')
-    else:
-        # Log detalhado dos erros de validação
-        for field, errors in form.errors.items():
-            for error in errors:
-                app.logger.warning(f"Erro no campo {field}: {error}")
-        flash('Erro ao cadastrar entidade. Verifique os dados e tente novamente.', 'danger')
-    
-    return redirect(url_for('main.cadastros', active_tab='entidade'))
-
-@main_bp.route('/cadastro/tipo_entidade', methods=['POST'])
-@login_required
-def cadastrar_tipo_entidade():
-    active_tab = request.form.get('active_tab', 'tipo-entidade')
-    form = TipoEntidadeForm()
-    if form.validate_on_submit():
-        novo_tipo = TpEntidade(
-            descricao=form.descricao.data
-        )
-        db.session.add(novo_tipo)
-        db.session.commit()
-        flash('Tipo de Entidade cadastrado com sucesso!', 'success')
-    return redirect(url_for('main.cadastros', tab='tipo-entidade'))
-
-@main_bp.route('/cadastro/software', methods=['POST'])
-@login_required
-def cadastrar_software():
-    active_tab = request.form.get('active_tab', 'software')
-    form = SoftwareForm()
-    if form.validate_on_submit():
-        novo_software = CadSoftware(
-            descricao=form.descricao.data
-        )
-        db.session.add(novo_software)
-        db.session.commit()
-        flash('Software cadastrado com sucesso!', 'success')
-    return redirect(url_for('main.cadastros'))
-
-@main_bp.route('/cadastro/modulo', methods=['POST'])
-@login_required
-def cadastrar_modulo():
-    active_tab = request.form.get('active_tab', 'modulo')
-    form = ModuloForm()
-    if form.validate_on_submit():
-        novo_modulo = CadModulo(
-            software_id=form.software.data,
-            descricao=form.descricao.data
-        )
-        db.session.add(novo_modulo)
-        db.session.commit()
-        flash('Módulo cadastrado com sucesso!', 'success')
-    return redirect(url_for('main.cadastros'))
-
-@main_bp.route('/cadastro/prioridade', methods=['POST'])
-@login_required
-def cadastrar_prioridade():
-    active_tab = request.form.get('active_tab', 'prioridade')
-    form = PrioridadeForm()
-    if form.validate_on_submit():
-        nova_prioridade = GrPrioridade(
-            descricao=form.descricao.data,
-            prazo=form.prazo.data
-        )
-        db.session.add(nova_prioridade)
-        db.session.commit()
-        flash('Prioridade cadastrada com sucesso!', 'success')
-    return redirect(url_for('main.cadastros'))
-
-@main_bp.route('/cadastro/tipo_ocorrencia', methods=['POST'])
-@login_required
-def cadastrar_tipo_ocorrencia():
-    active_tab = request.form.get('active_tab', 'tipo_ocorrencia')
-    form = TipoOcorrenciaForm()
-    if form.validate_on_submit():
-        novo_tipo_ocorrencia = CadTpOcorrencia(
-            descricao=form.descricao.data
-        )
-        db.session.add(novo_tipo_ocorrencia)
-        db.session.commit()
-        flash('Tipo de Ocorrência cadastrado com sucesso!', 'success')
-    return redirect(url_for('main.cadastros'))
-
-@main_bp.route('/cadastro/carro', methods=['POST'])
-@login_required
-def cadastrar_carro():
-    active_tab = request.form.get('active_tab', 'carro')
-    form = CarroForm()
-    if form.validate_on_submit():
-        novo_carro = CadCarro(
-            modelo=form.modelo.data,
-            placa=form.placa.data,
-            ano=form.ano.data,
-            marca=form.marca.data
-        )
-        db.session.add(novo_carro)
-        db.session.commit()
-        flash('Carro cadastrado com sucesso!', 'success')
-    return redirect(url_for('main.cadastros'))
-
-@main_bp.route('/buscar_municipio', methods=['GET'])
-@login_required
-def buscar_municipio():
-    query = request.args.get('query', '')
-    if query:
-        municipios = Municipio.query.filter(
-            (Municipio.codigo_ibge.ilike(f'%{query}%')) |
-            (Municipio.nome.ilike(f'%{query}%'))
-        ).all()
-    else:
-        municipios = Municipio.query.limit(10).all()  # Limita os resultados se não houver query
-
-    results = [{'codigo_ibge': m.codigo_ibge, 'nome': m.nome} for m in municipios]
-    return jsonify(municipios=results)
-
-
-import random
-import os
-from werkzeug.utils import secure_filename
-from datetime import datetime
-
-import random
-
+# Rotas para ocorrências
 @main_bp.route('/ocorrencia/nova', methods=['GET', 'POST'])
 @login_required
 def nova_ocorrencia():
     form = OcorrenciaForm()
     if form.validate_on_submit():
-        # Gerar número da ocorrência com 6 dígitos
         numero_ocorrencia = str(randint(1, 999999)).zfill(6)
-        
-        # Criando nova ocorrência
         ocorrencia = GrOcorrencia(
             numero_ocorrencia=numero_ocorrencia,
             entidade_id=form.entidade.data,
@@ -459,32 +94,165 @@ def nova_ocorrencia():
             modulo_id=form.modulo.data,
             descricao=form.descricao.data,
             resolucao=form.resolucao.data,
-            usuario_id=current_user.id  # Certifique-se de que o ID do usuário esteja sendo atribuído
+            usuario_id=current_user.id
         )
         db.session.add(ocorrencia)
         db.session.commit()
-
-        # Gerenciamento de anexo (mantido conforme seu código atual)
-        if form.anexo.data:
-            filename = secure_filename(form.anexo.data.filename)
-            filepath = os.path.join('caminho_para_armazenar_arquivos', filename)
-            form.anexo.data.save(filepath)
-            
-            anexo = GrAnexos(
-                ocorrencia_id=ocorrencia.id,
-                arquivo=open(filepath, 'rb').read(),
-                nome_arquivo=filename,
-                tipo_arquivo=form.anexo.data.mimetype,
-                data_upload=datetime.utcnow()
-            )
-            db.session.add(anexo)
-            db.session.commit()
-
         flash('Ocorrência criada com sucesso!', 'success')
         return redirect(url_for('main.index'))
-    
     return render_template('ocorrencia_form.html', form=form)
 
+@main_bp.route('/ocorrencia/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+def editar_ocorrencia(id):
+    ocorrencia = GrOcorrencia.query.get_or_404(id)
+    form = OcorrenciaForm(obj=ocorrencia)
+    if form.validate_on_submit():
+        ocorrencia.entidade_id = form.entidade.data
+        ocorrencia.contato = form.contato.data
+        ocorrencia.prioridade_id = form.prioridade.data
+        ocorrencia.tipo_id = form.tipo.data
+        ocorrencia.software_id = form.software.data
+        ocorrencia.modulo_id = form.modulo.data
+        ocorrencia.descricao = form.descricao.data
+        ocorrencia.resolucao = form.resolucao.data
+        db.session.commit()
+        flash('Ocorrência atualizada com sucesso!', 'success')
+        return redirect(url_for('main.meus_atendimentos'))
+    return render_template('ocorrencia_form.html', form=form)
+
+@main_bp.route('/ocorrencia/<int:id>/excluir', methods=['POST'])
+@login_required
+def excluir_ocorrencia(id):
+    ocorrencia = GrOcorrencia.query.get_or_404(id)
+    db.session.delete(ocorrencia)
+    db.session.commit()
+    flash('Ocorrência excluída com sucesso!', 'success')
+    return redirect(url_for('main.index'))
+
+# Rotas de cadastros com exibição de lista e botão "Novo"
+@main_bp.route('/cadastro/entidade', methods=['GET'])
+@login_required
+def listar_entidade():
+    entidades = CadEntidade.query.order_by(CadEntidade.id.asc()).all()  # Ordena por ID crescente
+    return render_template('entidade_list.html', entidades=entidades)
+
+@main_bp.route('/cadastro/entidade/nova', methods=['GET', 'POST'])
+@login_required
+def nova_entidade():
+    form = EntidadeForm()
+    form.tipo_entidade.choices = [(tipo.id, tipo.descricao) for tipo in TpEntidade.query.all()]
+    if form.validate_on_submit():
+        entidade = CadEntidade(
+            municipio=form.municipio.data,
+            tipo_entidade_id=form.tipo_entidade.data,
+            cnpj=form.cnpj.data,
+            endereco=form.endereco.data,
+            telefone=form.telefone.data
+        )
+        db.session.add(entidade)
+        db.session.commit()
+        flash('Entidade criada com sucesso!', 'success')
+        return redirect(url_for('main.cadastros'))
+    return render_template('entidade_form.html', form=form)
+
+@main_bp.route('/entidade/excluir/<int:id>', methods=['POST'])
+@login_required
+def excluir_entidade(id):
+    # Código para excluir a entidade
+    return redirect(url_for('main.listar_entidade'))
+
+
+@main_bp.route('/cadastro/entidade/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_entidade(id):
+    # Carregar a entidade existente pelo ID ou retornar erro 404
+    entidade = CadEntidade.query.get_or_404(id)
+
+    # Inicializar o formulário com os dados da entidade existente
+    form = EntidadeForm(obj=entidade)
+
+    # Preencher as opções do campo tipo_entidade (para dropdown)
+    form.tipo_entidade.choices = [(tipo.id, tipo.descricao) for tipo in TpEntidade.query.all()]
+
+    if form.validate_on_submit():
+        # Atualizar os campos da entidade com os dados do formulário
+        entidade.municipio = form.municipio.data
+        entidade.tipo_entidade_id = form.tipo_entidade.data
+        entidade.cnpj = form.cnpj.data
+        entidade.endereco = form.endereco.data
+        entidade.telefone = form.telefone.data
+        
+        # Comitar as mudanças no banco de dados
+        db.session.commit()
+
+        # Exibir uma mensagem de sucesso
+        flash('Entidade atualizada com sucesso!', 'success')
+
+        # Redirecionar para a página de cadastros
+        return redirect(url_for('main.cadastros', _anchor='entidade'))
+
+    # Renderizar o formulário de edição com os dados da entidade
+    return render_template('entidade_form.html', form=form)
+
+
+# Mesma estrutura para módulos, prioridade, tipos de ocorrências, e carro
+@main_bp.route('/cadastro/modulo', methods=['GET', 'POST'])
+@login_required
+def listar_modulo():
+    modulos = CadModulo.query.all()
+    return render_template('modulo_list.html', modulos=modulos)
+
+@main_bp.route('/cadastro/modulo/nova', methods=['GET', 'POST'])
+@login_required
+def novo_modulo():
+    form = ModuloForm()
+    form.software.choices = [(software.id, software.descricao) for software in CadSoftware.query.all()]
+    if form.validate_on_submit():
+        modulo = CadModulo(
+            descricao=form.descricao.data,
+            software_id=form.software.data
+        )
+        db.session.add(modulo)
+        db.session.commit()
+        flash('Módulo criado com sucesso!', 'success')
+        return redirect(url_for('main.listar_modulo'))
+    return render_template('modulo_form.html', form=form)
+
+@main_bp.route('/cadastro/modulo/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_modulo(id):
+    modulo = CadModulo.query.get_or_404(id)
+    form = ModuloForm(obj=modulo)
+    form.software.choices = [(software.id, software.descricao) for software in CadSoftware.query.all()]
+    if form.validate_on_submit():
+        modulo.descricao = form.descricao.data
+        modulo.software_id = form.software.data
+        db.session.commit()
+        flash('Módulo atualizado com sucesso!', 'success')
+        return redirect(url_for('main.listar_modulo'))
+    return render_template('modulo_form.html', form=form)
+
+# Continuar para as outras abas como prioridade, tipos de ocorrências, e carro
+
+@main_bp.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('main.html')
+
+@main_bp.route('/meus-atendimentos', methods=['GET'])
+@login_required
+def meus_atendimentos():
+    search_query = request.args.get('search', '').strip()
+    query = GrOcorrencia.query.filter_by(usuario_id=current_user.id)
+    if search_query:
+        query = query.join(CadEntidade).filter(
+            (GrOcorrencia.numero_ocorrencia.ilike(f'%{search_query}%')) |
+            (CadEntidade.municipio.ilike(f'%{search_query}%')) |
+            (GrOcorrencia.data_criacao.ilike(f'%{search_query}%'))
+        )
+    atendimentos = query.order_by(GrOcorrencia.data_criacao.desc()).limit(5).all()
+    return render_template('meus_atendimentos.html', atendimentos=atendimentos)
 
 @main_bp.route('/pesquisa-atendimento', methods=['GET'])
 @login_required
@@ -514,3 +282,214 @@ def pesquisa_atendimento():
 def visualizar_ocorrencia(id):
     ocorrencia = GrOcorrencia.query.get_or_404(id)  # Busca a ocorrência ou retorna 404 se não existir
     return render_template('visualizar_ocorrencia.html', ocorrencia=ocorrencia)
+
+
+@main_bp.route('/solicitar-ligacao')
+@login_required
+def solicitar_ligacao():
+    return render_template('solicitar_ligacao.html')
+
+@main_bp.route('/cadastros', methods=['GET', 'POST'])
+@login_required
+def cadastros():
+    # Código para carregar e manipular os formulários de cadastro.
+    active_tab = request.form.get('active_tab', 'tipo-entidade')
+    
+    # Forms e dados
+    tipo_entidade_form = TipoEntidadeForm()
+    entidade_form = EntidadeForm()
+    entidade_form.tipo_entidade.choices = [(tipo.id, tipo.descricao) for tipo in TpEntidade.query.all()]
+    software_form = SoftwareForm()
+    modulo_form = ModuloForm()
+    modulo_form.software.choices = [(software.id, software.descricao) for software in CadSoftware.query.all()]
+    prioridade_form = PrioridadeForm()
+    tipo_ocorrencia_form = TipoOcorrenciaForm()
+    carro_form = CarroForm()
+
+    # Verificar submissão e salvar dados
+    # Código para salvar entidades, software, módulos, etc.
+
+    # Carregar dados para as tabelas
+    tipos_entidade = TpEntidade.query.all()
+    entidades = CadEntidade.query.all()
+    softwares = CadSoftware.query.all()
+    modulos = CadModulo.query.all()
+    prioridades = GrPrioridade.query.all()
+    tipos_ocorrencia = CadTpOcorrencia.query.all()
+    carros = CadCarro.query.all()
+
+    return render_template('cadastros.html',
+                           tipo_entidade_form=tipo_entidade_form,
+                           entidade_form=entidade_form,
+                           software_form=software_form,
+                           modulo_form=modulo_form,
+                           prioridade_form=prioridade_form,
+                           tipo_ocorrencia_form=tipo_ocorrencia_form,
+                           carro_form=carro_form,
+                           tipos_entidade=tipos_entidade,
+                           entidades=entidades,
+                           softwares=softwares,
+                           modulos=modulos,
+                           prioridades=prioridades,
+                           tipos_ocorrencia=tipos_ocorrencia,
+                           carros=carros,
+                           active_tab=active_tab)
+
+@main_bp.route('/agendar-viagem')
+@login_required
+def agendar_viagem():
+    return render_template('agendar_viagem.html')
+
+@main_bp.route('/cadastro/tipo-entidade/novo', methods=['GET', 'POST'])
+@login_required
+def novo_tipo_entidade():
+    form = TipoEntidadeForm()
+    if form.validate_on_submit():
+        tipo_entidade = TpEntidade(descricao=form.descricao.data)
+        db.session.add(tipo_entidade)
+        db.session.commit()
+        flash('Tipo de entidade criado com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='tipo-entidade'))
+    return render_template('tipo_entidade_form.html', form=form)
+
+@main_bp.route('/tipo-entidade/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_tipo_entidade(id):
+    tipo_entidade = TpEntidade.query.get_or_404(id)
+    form = TipoEntidadeForm(obj=tipo_entidade)
+
+    if form.validate_on_submit():
+        tipo_entidade.descricao = form.descricao.data
+        db.session.commit()
+        flash('Tipo de entidade atualizado com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='tipo-entidade'))
+
+    return render_template('tipo_entidade_form.html', form=form, tipo_entidade=tipo_entidade)
+
+@main_bp.route('/software/novo', methods=['GET', 'POST'])
+@login_required
+def novo_software():
+    form = SoftwareForm()
+    if form.validate_on_submit():
+        novo_software = CadSoftware(
+            descricao=form.descricao.data
+        )
+        db.session.add(novo_software)
+        db.session.commit()
+        flash('Software cadastrado com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='software'))
+
+    return render_template('software_form.html', form=form)
+
+@main_bp.route('/software/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_software(id):
+    software = CadSoftware.query.get_or_404(id)
+    form = SoftwareForm(obj=software)
+
+    if form.validate_on_submit():
+        software.descricao = form.descricao.data
+        db.session.commit()
+        flash('Software atualizado com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='software'))
+
+    return render_template('software_form.html', form=form)
+
+@main_bp.route('/prioridade/nova', methods=['GET', 'POST'])
+@login_required
+def nova_prioridade():
+    form = PrioridadeForm()
+
+    if form.validate_on_submit():
+        nova_prioridade = GrPrioridade(
+            descricao=form.descricao.data,
+            prazo=form.prazo.data
+        )
+        db.session.add(nova_prioridade)
+        db.session.commit()
+        flash('Prioridade cadastrada com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='prioridade'))
+
+    return render_template('prioridade_form.html', form=form)
+
+@main_bp.route('/prioridade/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_prioridade(id):
+    prioridade = GrPrioridade.query.get_or_404(id)
+    form = PrioridadeForm(obj=prioridade)
+
+    if form.validate_on_submit():
+        prioridade.descricao = form.descricao.data
+        prioridade.prazo = form.prazo.data
+        db.session.commit()
+        flash('Prioridade atualizada com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='prioridade'))
+
+    return render_template('prioridade_form.html', form=form, prioridade=prioridade)
+
+@main_bp.route('/tipo_ocorrencia/novo', methods=['GET', 'POST'])
+@login_required
+def novo_tipo_ocorrencia():
+    form = TipoOcorrenciaForm()
+
+    if form.validate_on_submit():
+        novo_tipo_ocorrencia = CadTpOcorrencia(
+            descricao=form.descricao.data
+        )
+        db.session.add(novo_tipo_ocorrencia)
+        db.session.commit()
+        flash('Tipo de ocorrência cadastrado com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='tipo-ocorrencia'))
+
+    return render_template('tipo_ocorrencia_form.html', form=form)
+
+@main_bp.route('/tipo_ocorrencia/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_tipo_ocorrencia(id):
+    tipo_ocorrencia = CadTpOcorrencia.query.get_or_404(id)
+    form = TipoOcorrenciaForm(obj=tipo_ocorrencia)
+
+    if form.validate_on_submit():
+        tipo_ocorrencia.descricao = form.descricao.data
+        db.session.commit()
+        flash('Tipo de ocorrência atualizado com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='tipo-ocorrencia'))
+
+    return render_template('tipo_ocorrencia_form.html', form=form)
+
+@main_bp.route('/carro/novo', methods=['GET', 'POST'])
+@login_required
+def novo_carro():
+    form = CarroForm()
+
+    if form.validate_on_submit():
+        novo_carro = CadCarro(
+            modelo=form.modelo.data,
+            marca=form.marca.data,
+            ano=form.ano.data,
+            placa=form.placa.data
+        )
+        db.session.add(novo_carro)
+        db.session.commit()
+        flash('Carro cadastrado com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='carro'))
+
+    return render_template('carro_form.html', form=form)
+
+@main_bp.route('/carro/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_carro(id):
+    carro = CadCarro.query.get_or_404(id)
+    form = CarroForm(obj=carro)
+
+    if form.validate_on_submit():
+        carro.modelo = form.modelo.data
+        carro.marca = form.marca.data
+        carro.ano = form.ano.data
+        carro.placa = form.placa.data
+        db.session.commit()
+        flash('Carro atualizado com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='carro'))
+
+    return render_template('carro_form.html', form=form)
+

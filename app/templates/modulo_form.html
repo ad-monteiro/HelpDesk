@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Cadastrar Módulo</h1>
+    <form method="POST" action="{{ url_for('main.novo_modulo') }}">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            <label for="software">Software</label>
+            {{ form.software(class_="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="descricao">Descrição</label>
+            {{ form.descricao(class_="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{{ url_for('main.cadastros', active_tab='modulo') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+{% endblock %}
