@@ -99,15 +99,24 @@ def nova_ocorrencia():
         db.session.add(ocorrencia)
         db.session.commit()
         flash('Ocorrência criada com sucesso!', 'success')
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.meus_atendimentos'))
     return render_template('ocorrencia_form.html', form=form)
 
-@main_bp.route('/ocorrencia/editar/<int:id>', methods=['GET', 'POST'])
+@main_bp.route('/ocorrencia/<int:id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_ocorrencia(id):
+    # Busca a ocorrência existente no banco de dados
     ocorrencia = GrOcorrencia.query.get_or_404(id)
+    
+    # Carrega os dados da ocorrência no formulário para edição
     form = OcorrenciaForm(obj=ocorrencia)
+    
     if form.validate_on_submit():
+        # Atualiza os campos da ocorrência existente
+        
+        # Busca a entidade correspondente no banco de dados
+        ocorrencia.entidade = CadEntidade.query.get(form.entidade.data)
+        
         ocorrencia.entidade_id = form.entidade.data
         ocorrencia.contato = form.contato.data
         ocorrencia.prioridade_id = form.prioridade.data
@@ -116,10 +125,22 @@ def editar_ocorrencia(id):
         ocorrencia.modulo_id = form.modulo.data
         ocorrencia.descricao = form.descricao.data
         ocorrencia.resolucao = form.resolucao.data
+        
+        # Se houver um arquivo anexado, trate o anexo
+        if form.anexo.data:
+            # Adicione a lógica de upload de arquivo aqui (se necessário)
+            ocorrencia.anexo = form.anexo.data.filename
+        
+        # Salva as mudanças no banco de dados
         db.session.commit()
+        
+        # Exibe uma mensagem de sucesso e redireciona
         flash('Ocorrência atualizada com sucesso!', 'success')
         return redirect(url_for('main.meus_atendimentos'))
-    return render_template('ocorrencia_form.html', form=form)
+    
+    # Se o método for GET ou o formulário não for válido, renderize o formulário de edição
+    return render_template('ocorrencia_form.html', form=form, ocorrencia=ocorrencia)
+
 
 @main_bp.route('/ocorrencia/<int:id>/excluir', methods=['POST'])
 @login_required
@@ -128,13 +149,13 @@ def excluir_ocorrencia(id):
     db.session.delete(ocorrencia)
     db.session.commit()
     flash('Ocorrência excluída com sucesso!', 'success')
-    return redirect(url_for('main.index'))
+    return redirect(url_for('main.meus_atendimentos'))
 
 # Rotas de cadastros com exibição de lista e botão "Novo"
-@main_bp.route('/cadastro/entidade', methods=['GET'])
+@main_bp.route('/cadastro/entidade', methods=['GET', 'POST'])
 @login_required
 def listar_entidade():
-    entidades = CadEntidade.query.order_by(CadEntidade.id.asc()).all()  # Ordena por ID crescente
+    entidades = CadEntidade.query.all()
     return render_template('entidade_list.html', entidades=entidades)
 
 @main_bp.route('/cadastro/entidade/nova', methods=['GET', 'POST'])
