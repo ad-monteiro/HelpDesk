@@ -34,8 +34,15 @@
     <!-- Linha 2: Entidade e Contato -->
     <div class="form-row">
         <div class="form-group col-md-6">
-            <label for="entidade">Entidade</label>
-            {{ form.entidade(class_="form-control") }}
+            <label for="entidade_nome">Entidade</label>
+            <input type="text" id="entidade_nome" class="form-control" placeholder="Selecione uma entidade" readonly>
+            <input type="hidden" id="entidade_id" name="entidade_id">
+        </div>
+        <div class="form-group col-md-2 d-flex align-items-end">
+            <!-- Botão de Lupa -->
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#entidadeModal">
+                <i class="fas fa-search"></i>
+            </button>
         </div>
         <div class="form-group col-md-6">
             <label for="contato">Contato</label>
@@ -88,6 +95,88 @@
     <!-- Botão de Salvar -->
     <button type="submit" class="btn btn-primary">Salvar</button>
     <a href="{{ url_for('main.meus_atendimentos') }}" class="btn btn-secondary">Cancelar</a>
-    
 </form>
+
+<!-- Modal para Pesquisa de Entidades -->
+<div class="modal fade" id="entidadeModal" tabindex="-1" role="dialog" aria-labelledby="entidadeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="entidadeModalLabel">Pesquisar Entidade</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Campo de pesquisa dentro da modal -->
+                <div class="form-group">
+                    <label for="search_entidade_modal">Buscar Entidade</label>
+                    <input type="text" id="search_entidade_modal" class="form-control" placeholder="Digite o nome da entidade">
+                </div>
+                <!-- Lista de entidades encontradas -->
+                <ul id="entidade_suggestions_modal" class="list-group">
+                    <!-- Resultados das entidades aparecem aqui -->
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        // Quando o usuário digitar no campo de pesquisa dentro da modal
+        $("#search_entidade_modal").on("input", function() {
+            var searchText = $(this).val();
+
+            if (searchText.length === 0) {
+                $("#entidade_suggestions_modal").empty();
+            }
+
+            // Se o usuário digitar mais de 2 caracteres, faz a busca
+            if (searchText.length > 2) {
+                $.ajax({
+                    url: "{{ url_for('main.buscar_entidades') }}",  // Rota para buscar entidades
+                    method: "GET",
+                    data: { query: searchText },
+                    success: function(data) {
+                        $("#entidade_suggestions_modal").empty();  // Limpa os resultados anteriores
+                        
+                        if (data.entidades.length > 0) {
+                            // Preenche com os novos resultados
+                            data.entidades.forEach(function(entidade) {
+                                $("#entidade_suggestions_modal").append(
+                                    `<li class="list-group-item entidade-item" data-id="${entidade.id}" style="cursor:pointer;">
+                                        ${entidade.nome}
+                                    </li>`
+                                );
+                            });
+                        } else {
+                            $("#entidade_suggestions_modal").append(`<li class="list-group-item disabled">Nenhuma entidade encontrada</li>`);
+                        }
+                    }
+                });
+            }
+        });
+
+        // Evento de clique nos itens de entidade
+        $(document).on("click", ".entidade-item", function() {
+            var entidadeNome = $(this).text();
+            var entidadeId = $(this).data("id");
+
+            // Atualiza o campo de texto no formulário principal
+            $("#entidade_nome").val(entidadeNome);
+            $("#entidade_id").val(entidadeId);  // Atualiza o campo oculto com o ID
+
+            // Fecha a modal
+            $('#entidadeModal').modal('hide');
+        });
+    });
+</script>
 {% endblock %}

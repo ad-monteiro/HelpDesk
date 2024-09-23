@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app as app
 from flask_login import login_user, logout_user, login_required, current_user
-from .models import Usuario, GrOcorrencia, GrAnexos, CadEntidade, GrPrioridade, CadTpOcorrencia, CadSoftware, CadModulo, TpEntidade, CadCarro, Municipio
-from .forms import LoginForm, RegisterForm, OcorrenciaForm, AnexoForm, EntidadeForm, TipoEntidadeForm, SoftwareForm, ModuloForm, PrioridadeForm, TipoOcorrenciaForm, CarroForm
+from .models import Usuario, GrOcorrencia, GrAnexos, CadEntidade, GrPrioridade, CadTpOcorrencia, CadSoftware, CadModulo, CadCarro
+from .forms import LoginForm, RegisterForm, OcorrenciaForm, AnexoForm, EntidadeForm, SoftwareForm, ModuloForm, PrioridadeForm, TipoOcorrenciaForm, CarroForm
 from flask_bcrypt import Bcrypt
 from werkzeug.utils import secure_filename
 import os
@@ -82,25 +82,48 @@ def index():
 @login_required
 def nova_ocorrencia():
     form = OcorrenciaForm()
+    app.logger.info('Form carregado e pronto para validação.')
+    
     if form.validate_on_submit():
-        numero_ocorrencia = str(randint(1, 999999)).zfill(6)
-        ocorrencia = GrOcorrencia(
-            numero_ocorrencia=numero_ocorrencia,
-            entidade_id=form.entidade.data,
-            contato=form.contato.data,
-            prioridade_id=form.prioridade.data,
-            tipo_id=form.tipo.data,
-            software_id=form.software.data,
-            modulo_id=form.modulo.data,
-            descricao=form.descricao.data,
-            resolucao=form.resolucao.data,
-            usuario_id=current_user.id
-        )
-        db.session.add(ocorrencia)
-        db.session.commit()
-        flash('Ocorrência criada com sucesso!', 'success')
-        return redirect(url_for('main.meus_atendimentos'))
+        app.logger.info('Formulário validado com sucesso.')
+        
+        try:
+            # Gera um número de ocorrência único
+            numero_ocorrencia = str(randint(1, 999999)).zfill(6)
+            app.logger.info(f'Número da ocorrência gerado: {numero_ocorrencia}')
+            
+            # Captura os dados do formulário
+            ocorrencia = GrOcorrencia(
+                numero_ocorrencia=numero_ocorrencia,
+                entidade_id = form.entidade_id.data,
+                contato=form.contato.data,
+                prioridade_id=form.prioridade.data,
+                tipo_id=form.tipo.data,
+                software_id=form.software.data,
+                modulo_id=form.modulo.data,
+                descricao=form.descricao.data,
+                resolucao=form.resolucao.data,
+                usuario_id=current_user.id
+            )
+            
+            # Adiciona e comita no banco de dados
+            db.session.add(ocorrencia)
+            db.session.commit()
+            
+            app.logger.info('Ocorrência criada e gravada no banco de dados com sucesso.')
+            flash('Ocorrência criada com sucesso!', 'success')
+            return redirect(url_for('main.meus_atendimentos'))
+        
+        except Exception as e:
+            app.logger.error(f'Erro ao tentar criar ocorrência: {str(e)}')
+            flash('Erro ao tentar criar a ocorrência. Verifique os logs para mais detalhes.', 'danger')
+    else:
+        app.logger.info('Formulário falhou na validação.')
+        app.logger.error(f'Erros de validação: {form.errors}')  # Aqui os erros de validação são registrados
+
     return render_template('ocorrencia_form.html', form=form)
+
+
 
 @main_bp.route('/ocorrencia/<int:id>/editar', methods=['GET', 'POST'])
 @login_required
@@ -114,10 +137,10 @@ def editar_ocorrencia(id):
     if form.validate_on_submit():
         # Atualiza os campos da ocorrência existente
         
-        # Busca a entidade correspondente no banco de dados
-        ocorrencia.entidade = CadEntidade.query.get(form.entidade.data)
+        # Atribui o ID da entidade diretamente do form, já que é um HiddenField
+        ocorrencia.entidade_id = form.entidade_id.data
         
-        ocorrencia.entidade_id = form.entidade.data
+        # Atualiza os outros campos da ocorrência
         ocorrencia.contato = form.contato.data
         ocorrencia.prioridade_id = form.prioridade.data
         ocorrencia.tipo_id = form.tipo.data
@@ -162,11 +185,9 @@ def listar_entidade():
 @login_required
 def nova_entidade():
     form = EntidadeForm()
-    form.tipo_entidade.choices = [(tipo.id, tipo.descricao) for tipo in TpEntidade.query.all()]
     if form.validate_on_submit():
         entidade = CadEntidade(
             municipio=form.municipio.data,
-            tipo_entidade_id=form.tipo_entidade.data,
             cnpj=form.cnpj.data,
             endereco=form.endereco.data,
             telefone=form.telefone.data
@@ -183,38 +204,34 @@ def excluir_entidade(id):
     # Código para excluir a entidade
     return redirect(url_for('main.listar_entidade'))
 
+@main_bp.route('/pesquisa_entidades')
+@login_required
+def pesquisa_entidades():
+    query = request.args.get('q')
+    if query:
+        entidades = CadEntidade.query.filter(CadEntidade.nome.ilike(f'%{query}%')).all()
+        results = [{'id': e.id, 'nome': e.nome} for e in entidades]
+        return jsonify(results)
+    return jsonify([])
 
 @main_bp.route('/cadastro/entidade/<int:id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_entidade(id):
-    # Carregar a entidade existente pelo ID ou retornar erro 404
     entidade = CadEntidade.query.get_or_404(id)
-
-    # Inicializar o formulário com os dados da entidade existente
     form = EntidadeForm(obj=entidade)
 
-    # Preencher as opções do campo tipo_entidade (para dropdown)
-    form.tipo_entidade.choices = [(tipo.id, tipo.descricao) for tipo in TpEntidade.query.all()]
-
     if form.validate_on_submit():
-        # Atualizar os campos da entidade com os dados do formulário
+        # Atualize os dados da entidade
         entidade.municipio = form.municipio.data
-        entidade.tipo_entidade_id = form.tipo_entidade.data
         entidade.cnpj = form.cnpj.data
         entidade.endereco = form.endereco.data
         entidade.telefone = form.telefone.data
-        
-        # Comitar as mudanças no banco de dados
         db.session.commit()
 
-        # Exibir uma mensagem de sucesso
         flash('Entidade atualizada com sucesso!', 'success')
+        return redirect(url_for('main.cadastros', active_tab='entidade'))
 
-        # Redirecionar para a página de cadastros
-        return redirect(url_for('main.cadastros', _anchor='entidade'))
-
-    # Renderizar o formulário de edição com os dados da entidade
-    return render_template('entidade_form.html', form=form)
+    return render_template('entidade_form.html', form=form, entidade=entidade)
 
 
 # Mesma estrutura para módulos, prioridade, tipos de ocorrências, e carro
@@ -264,6 +281,7 @@ def dashboard():
 @main_bp.route('/meus-atendimentos', methods=['GET'])
 @login_required
 def meus_atendimentos():
+    ocorrencias = GrOcorrencia.query.filter_by(usuario_id=current_user.id).all()  # Certifique-se que a consulta está correta
     search_query = request.args.get('search', '').strip()
     query = GrOcorrencia.query.filter_by(usuario_id=current_user.id)
     if search_query:
@@ -314,12 +332,10 @@ def solicitar_ligacao():
 @login_required
 def cadastros():
     # Código para carregar e manipular os formulários de cadastro.
-    active_tab = request.form.get('active_tab', 'tipo-entidade')
+    active_tab = request.form.get('active_tab', 'entidade')
     
     # Forms e dados
-    tipo_entidade_form = TipoEntidadeForm()
     entidade_form = EntidadeForm()
-    entidade_form.tipo_entidade.choices = [(tipo.id, tipo.descricao) for tipo in TpEntidade.query.all()]
     software_form = SoftwareForm()
     modulo_form = ModuloForm()
     modulo_form.software.choices = [(software.id, software.descricao) for software in CadSoftware.query.all()]
@@ -331,7 +347,6 @@ def cadastros():
     # Código para salvar entidades, software, módulos, etc.
 
     # Carregar dados para as tabelas
-    tipos_entidade = TpEntidade.query.order_by(TpEntidade.id.asc()).all()
     entidades = CadEntidade.query.order_by(CadEntidade.id.asc()).all()
     softwares = CadSoftware.query.order_by(CadSoftware.id.asc()).all()
     modulos = CadModulo.query.order_by(CadModulo.id.asc()).all()
@@ -340,14 +355,12 @@ def cadastros():
     carros = CadCarro.query.order_by(CadCarro.id.asc()).all()
 
     return render_template('cadastros.html',
-                           tipo_entidade_form=tipo_entidade_form,
                            entidade_form=entidade_form,
                            software_form=software_form,
                            modulo_form=modulo_form,
                            prioridade_form=prioridade_form,
                            tipo_ocorrencia_form=tipo_ocorrencia_form,
                            carro_form=carro_form,
-                           tipos_entidade=tipos_entidade,
                            entidades=entidades,
                            softwares=softwares,
                            modulos=modulos,
@@ -361,38 +374,23 @@ def cadastros():
 def agendar_viagem():
     return render_template('agendar_viagem.html')
 
-@main_bp.route('/cadastro/tipo-entidade/novo', methods=['GET', 'POST'])
+@main_bp.route('/buscar-entidades')
 @login_required
-def novo_tipo_entidade():
-    form = TipoEntidadeForm()
-    if form.validate_on_submit():
-        tipo_entidade = TpEntidade(
-            descricao=form.descricao.data,
-            abreviacao=form.abreviacao.data)
-        db.session.add(tipo_entidade)
-        db.session.commit()
-        flash('Tipo de entidade criado com sucesso!', 'success')
-        return redirect(url_for('main.cadastros', active_tab='tipo-entidade'))
-    
-    return render_template('tipo_entidade_form.html', form=form)
+def buscar_entidades():
+    query = request.args.get('query', '')
 
-@main_bp.route('/tipo-entidade/<int:id>/editar', methods=['GET', 'POST'])
-@login_required
-def editar_tipo_entidade(id):
-    tipo_entidade = TpEntidade.query.get_or_404(id)  # Busca o registro existente
-    form = TipoEntidadeForm(obj=tipo_entidade)  # Vincula o formulário com o objeto existente
+    # Certifique-se de que 'query' seja uma string válida e, em seguida, faça a pesquisa
+    if query:
+        entidades = CadEntidade.query.filter(
+            CadEntidade.municipio.ilike(f"%{query}%")  # Suponha que 'nome' seja o campo correto a ser filtrado
+        ).all()
 
-    if form.validate_on_submit():  # Se o formulário for válido após o envio
-        # Atualiza os campos do objeto, sem a vírgula
-        tipo_entidade.descricao = form.descricao.data
-        tipo_entidade.abreviacao = form.abreviacao.data
-        
-        # Confirma a transação no banco de dados
-        db.session.commit()
-        flash('Tipo de entidade atualizado com sucesso!', 'success')
-        return redirect(url_for('main.cadastros', active_tab='tipo-entidade'))  # Redireciona após o sucesso
-    return render_template('tipo_entidade_form.html', form=form, tipo_entidade=tipo_entidade)
+        # Construa a resposta JSON com os dados das entidades
+        resultados = [{'id': entidade.id, 'nome': f"{entidade.municipio}"} for entidade in entidades]
 
+        return jsonify({'entidades': resultados})
+
+    return jsonify({'entidades': []})
 
 @main_bp.route('/software/novo', methods=['GET', 'POST'])
 @login_required

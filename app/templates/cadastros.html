@@ -7,9 +7,6 @@
 
 <ul class="nav nav-tabs" id="cadastrosTab" role="tablist">
     <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'tipo-entidade' %}active{% endif %}" id="tipo-entidade-tab" data-toggle="tab" href="#tipo-entidade" role="tab" aria-controls="tipo-entidade" aria-selected="true">Tipos de Entidade</a>
-    </li>
-    <li class="nav-item">
         <a class="nav-link {% if active_tab == 'entidade' %}active{% endif %}" id="entidade-tab" data-toggle="tab" href="#entidade" role="tab" aria-controls="entidade" aria-selected="false">Entidades</a>
     </li>
     <li class="nav-item">
@@ -31,36 +28,6 @@
 
  <!-- Conteúdo das abas -->
  <div class="tab-content" id="cadastrosTabContent">
-    <!-- Tipo de Entidade -->
-    <div class="tab-pane fade {% if active_tab == 'tipo-entidade' %}show active{% endif %}" id="tipo-entidade" role="tabpanel" aria-labelledby="tipo-entidade-tab">
-        <h4></h4>
-        <h4></h4>
-        <a href="{{ url_for('main.novo_tipo_entidade') }}" class="btn btn-primary mb-4">Novo</a>
-        <h4>Tipos de Entidade Cadastrados</h4>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Descrição</th>
-                    <th>Abreviação</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for tipo in tipos_entidade %}
-                <tr>
-                    <td>{{ tipo.id }}</td>
-                    <td>{{ tipo.descricao }}</td>
-                    <td>{{ tipo.abreviacao }}
-                    <td>
-                        <a href="{{ url_for('main.editar_tipo_entidade', id=tipo.id) }}" class="btn btn-warning btn-sm">Editar</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
     <!-- Entidade -->
     <div class="tab-pane fade {% if active_tab == 'entidade' %}show active{% endif %}" id="entidade" role="tabpanel" aria-labelledby="entidade-tab">
         <h4></h4>
@@ -82,7 +49,7 @@
                 {% for entidade in entidades %}
                 <tr>
                     <td>{{ entidade.id }}</td>
-                    <td>{{ entidade.tipo_entidade.abreviacao }} {{ entidade.municipio }}</td>
+                    <td>{{ entidade.municipio }}</td>
                     <td>{{ entidade.cnpj }}</td>
                     <td>{{ entidade.endereco }}</td>
                     <td>{{ entidade.telefone }}</td>

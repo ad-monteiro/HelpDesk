@@ -1,11 +1,11 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, EmailField, ValidationError, HiddenField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
-from .models import Usuario, CadEntidade, GrPrioridade, CadTpOcorrencia, CadSoftware, CadModulo, TpEntidade
+from .models import Usuario, CadEntidade, GrPrioridade, CadTpOcorrencia, CadSoftware, CadModulo
 
 class OcorrenciaForm(FlaskForm):
     numero_ocorrencia = StringField('Número da Ocorrência', render_kw={'readonly': True})  # Campo desabilitado
-    entidade = SelectField('Entidade', coerce=int, validators=[DataRequired()])
+    entidade_id = HiddenField('Entidade ID', validators=[DataRequired()])
     contato = TextAreaField('Contato', validators=[DataRequired()])
     prioridade = SelectField('Prioridade', choices=[], coerce=int, validators=[DataRequired()])
     tipo = SelectField('Tipo', choices=[], coerce=int, validators=[DataRequired()])
@@ -18,7 +18,7 @@ class OcorrenciaForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(OcorrenciaForm, self).__init__(*args, **kwargs)
-        self.entidade.choices = [(e.id, e.municipio) for e in CadEntidade.query.all()]
+        # As opções para os campos de prioridade, tipo, software e módulo continuam sendo carregadas
         self.prioridade.choices = [(p.id, p.descricao) for p in GrPrioridade.query.all()]
         self.tipo.choices = [(t.id, t.descricao) for t in CadTpOcorrencia.query.all()]
         self.software.choices = [(s.id, s.descricao) for s in CadSoftware.query.all()]
@@ -49,14 +49,10 @@ class RegisterForm(FlaskForm):
 class EntidadeForm(FlaskForm):
     id = HiddenField()
     municipio = StringField('Município', validators=[DataRequired()])
-    tipo_entidade = SelectField('Tipo de Entidade', coerce=int)
     cnpj = StringField('CNPJ', validators=[DataRequired()])
     endereco = StringField('Endereço', validators=[DataRequired()])
     telefone = StringField('Telefone', validators=[DataRequired()])
 
-    def __init__(self, *args, **kwargs):
-        super(EntidadeForm, self).__init__(*args, **kwargs)
-        self.tipo_entidade.choices = [(tipo.id, tipo.descricao) for tipo in TpEntidade.query.all()]
 
 class TipoEntidadeForm(FlaskForm):
     descricao = StringField('Descrição', validators=[DataRequired()])

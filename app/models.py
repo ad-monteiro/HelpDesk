@@ -33,14 +33,6 @@ class CadSuporte(db.Model):
     cpf = db.Column(db.String(14), unique=True)
     setor = db.Column(db.String(100))
 
-class TpEntidade(db.Model):
-    __tablename__ = 'tp_entidade'
-    id = db.Column(db.Integer, primary_key=True)
-    descricao = db.Column(db.String(100), nullable=False)
-    abreviacao = db.Column(db.String(10), nullable=True)
-
-    def __repr__(self):
-        return f'<TpEntidade {self.descricao}>'
     
 class CadEntidade(db.Model):
     __tablename__ = 'cad_entidade'
@@ -49,8 +41,6 @@ class CadEntidade(db.Model):
     cnpj = db.Column(db.String(18), unique=True)
     endereco = db.Column(db.String(255))
     telefone = db.Column(db.String(20))
-    tipo_entidade_id = db.Column(db.Integer, db.ForeignKey('tp_entidade.id'), nullable=True)
-    tipo_entidade = db.relationship('TpEntidade')
 
 class GrPrioridade(db.Model):
     __tablename__ = 'gr_prioridade'
@@ -84,8 +74,8 @@ class GrOcorrencia(db.Model):
     contato = db.Column(db.String(255), nullable=False)
     prioridade_id = db.Column(db.Integer, db.ForeignKey('gr_prioridade.id'), nullable=False)
     prioridade = db.relationship('GrPrioridade', backref='ocorrencias')
-    tipo_id = db.Column(db.Integer, db.ForeignKey('cad_tpocorrencia.id'), nullable=False)  # Ajuste aqui para refletir o relacionamento correto
-    tipo = db.relationship('CadTpOcorrencia', backref='ocorrencias')  # Adicione esta linha
+    tipo_id = db.Column(db.Integer, db.ForeignKey('cad_tpocorrencia.id'), nullable=False)
+    tipo = db.relationship('CadTpOcorrencia', backref='ocorrencias')
     software_id = db.Column(db.Integer, db.ForeignKey('cad_software.id'), nullable=False)
     software = db.relationship('CadSoftware', backref='ocorrencias')
     modulo_id = db.Column(db.Integer, db.ForeignKey('cad_modulo.id'), nullable=False)
@@ -93,7 +83,7 @@ class GrOcorrencia(db.Model):
     descricao = db.Column(db.Text, nullable=False)
     resolucao = db.Column(db.Text)
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)  # Adicione essa linha
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     usuario = db.relationship('Usuario', backref='ocorrencias')
 
 class CadCarro(db.Model):
@@ -134,9 +124,3 @@ class GrAnexos(db.Model):
     nome_arquivo = db.Column(db.String(255), nullable=False)
     tipo_arquivo = db.Column(db.String(100), nullable=False)
     data_upload = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Municipio(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    codigo_ibge = db.Column(db.String(10), unique=True, nullable=False)
-    nome = db.Column(db.String(100), nullable=False)
-    ultimo_censo = db.Column(db.String(100))  # Pode ser outro tipo, dependendo dos dados
