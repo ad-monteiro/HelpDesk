@@ -18,6 +18,18 @@
                 <label for="numero_ocorrencia">Número da Ocorrência</label>
                 <input type="text" class="form-control" id="numero_ocorrencia" value="{{ ocorrencia.numero_ocorrencia }}" readonly>
             </div>
+            <div class="form-group col-md-6">
+                <label for="situacao">Situação</label>
+                <!-- Modo de visualização -->
+                <span class="view-mode form-control">{{ ocorrencia.situacao }}</span>
+                <!-- Modo de edição (oculto por padrão) -->
+                <select class="form-control edit-mode d-none" id="situacao">
+                    <option value="aberto" {% if ocorrencia.situacao == 'aberto' %}selected{% endif %}>Aberto</option>
+                    <option value="analise" {% if ocorrencia.situacao == 'analise' %}selected{% endif %}>Em Análise</option>
+                    <option value="aguardando" {% if ocorrencia.situacao == 'aguardando' %}selected{% endif %}>Aguardando Programação</option>
+                    <option value="finalizado" {% if ocorrencia.situacao == 'finalizado' %}selected{% endif %}>Finalizado</option>
+                </select>
+            </div>
         </div>
 
         <!-- Linha 2: Entidade e Contato -->
@@ -36,23 +48,59 @@
         <div class="form-row">
             <div class="form-group col-md-6">
                 <label for="prioridade">Prioridade</label>
-                <input type="text" class="form-control" id="prioridade" value="{{ ocorrencia.prioridade.descricao }}" readonly>
-            </div>
+                <!-- Modo de visualização -->
+                <span class="view-mode form-control">{{ ocorrencia.prioridade.descricao }}</span>
+                <!-- Modo de edição (oculto por padrão) -->
+                <select class="form-control edit-mode d-none" id="prioridade">
+                    {% for prioridade in prioridades %}
+                        <option value="{{ prioridade.id }}" {% if ocorrencia.prioridade_id == prioridade.id %}selected{% endif %}>
+                            {{ prioridade.descricao }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>            
             <div class="form-group col-md-6">
                 <label for="tipo">Tipo</label>
-                <input type="text" class="form-control" id="tipo" value="{{ ocorrencia.tipo.descricao }}" readonly>
-            </div>
+                <!-- Modo de visualização -->
+                <span class="view-mode form-control">{{ ocorrencia.tipo.descricao }}</span>
+                <!-- Modo de edição (oculto por padrão) -->
+                <select class="form-control edit-mode d-none" id="tipo">
+                    {% for tipo in tipos %}
+                        <option value="{{ tipo.id }}" {% if ocorrencia.tipo_id == tipo.id %}selected{% endif %}>
+                            {{ tipo.descricao }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>            
         </div>
 
         <!-- Linha 4: Software e Módulo -->
         <div class="form-row">
             <div class="form-group col-md-6">
                 <label for="software">Software</label>
-                <input type="text" class="form-control" id="software" value="{{ ocorrencia.software.descricao }}" readonly>
-            </div>
+                <!-- Modo de visualização -->
+                <span class="view-mode form-control">{{ ocorrencia.software.descricao }}</span>
+                <!-- Modo de edição (oculto por padrão) -->
+                <select class="form-control edit-mode d-none" id="software">
+                    {% for software in softwares %}
+                        <option value="{{ software.id }}" {% if ocorrencia.software_id == software.id %}selected{% endif %}>
+                            {{ software.descricao }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>            
             <div class="form-group col-md-6">
                 <label for="modulo">Módulo</label>
-                <input type="text" class="form-control" id="modulo" value="{{ ocorrencia.modulo.descricao }}" readonly>
+                <!-- Modo de visualização -->
+                <span class="view-mode form-control">{{ ocorrencia.modulo.descricao }}</span>
+                <!-- Modo de edição (oculto por padrão) -->
+                <select class="form-control edit-mode d-none" id="modulo">
+                    {% for modulo in modulos %}
+                        <option value="{{ modulo.id }}" {% if ocorrencia.modulo_id == modulo.id %}selected{% endif %}>
+                            {{ modulo.descricao }}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
 
@@ -64,12 +112,87 @@
 
         <!-- Linha 6: Resolução -->
         <div class="form-group">
-            <label for="resolucao">Resolução</label>
-            <textarea class="form-control" id="resolucao" rows="3" readonly>{{ ocorrencia.resolucao or 'N/A' }}</textarea>
+            <label for="resolucao">
+                Resolução</label>
+                <textarea class="form-control" id="resolucao" rows="3" readonly>{{ ocorrencia.resolucao or 'N/A' }}</textarea>
         </div>
-
-        <!-- Botão de Voltar -->
-        <a href="{{ url_for('main.pesquisa_atendimento') }}" class="btn btn-secondary">Voltar</a>
+    
+            <!-- Botão de Voltar -->
+            <a href="{{ url_for('main.pesquisa_atendimento') }}" class="btn btn-secondary">Voltar</a>
+    
+            <!-- Botões de Editar e Salvar -->
+            <button type="button" class="btn btn-warning" id="btn-edit" onclick="habilitarEdicao()">Editar</button>
+            <button type="button" class="btn btn-success d-none" id="btn-save" onclick="salvarAlteracoes({{ ocorrencia.id }})">Salvar</button>
+        </div>
     </div>
-</div>
-{% endblock %}
+    
+    <script>
+        function habilitarEdicao() {
+            // Alterna para o modo de edição, removendo o atributo 'readonly' de todos os campos
+            document.querySelectorAll('.view-mode').forEach(el => el.classList.add('d-none'));  // Oculta o modo de visualização
+            document.querySelectorAll('.edit-mode').forEach(el => el.classList.remove('d-none'));  // Exibe o modo de edição
+            
+            // Remove o 'readonly' de todos os inputs de texto e textarea
+            document.querySelectorAll('textarea').forEach(el => el.removeAttribute('readonly'));
+    
+            // Mostra o botão "Salvar" e esconde o botão "Editar"
+            document.getElementById('btn-edit').classList.add('d-none');
+            document.getElementById('btn-save').classList.remove('d-none');
+        }
+    
+        function salvarAlteracoes(ocorrenciaId) {
+            // Coleta os dados do formulário
+            const situacao = document.getElementById('situacao').value;
+            const contato = document.getElementById('contato').value;
+            const descricao = document.getElementById('descricao').value;
+            const resolucao = document.getElementById('resolucao').value;
+            const prioridade = document.getElementById('prioridade').value;
+            const tipo = document.getElementById('tipo').value;
+            const software = document.getElementById('software').value;
+            const modulo = document.getElementById('modulo').value;
+    
+            // Envia os dados via AJAX
+            fetch(`/ocorrencia/${ocorrenciaId}/editar-inline`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'  // Inclua o token CSRF
+                },
+                body: JSON.stringify({
+                    situacao: situacao,
+                    contato: contato,
+                    descricao: descricao,
+                    resolucao: resolucao,
+                    prioridade: prioridade,
+                    tipo: tipo,
+                    software: software,
+                    modulo: modulo
+                }),
+                cache: 'no-store'  // Prevenção contra cache
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Erro: ' + data.error);
+                } else {
+                    alert('Ocorrência atualizada com sucesso!');
+    
+                    // Alterna de volta para o modo de visualização
+                    document.querySelectorAll('.form-control').forEach(el => el.setAttribute('readonly', true));
+                    document.querySelectorAll('.edit-mode').forEach(el => el.classList.add('d-none'));
+                    document.querySelectorAll('.view-mode').forEach(el => el.classList.remove('d-none'));
+    
+                    // Esconde o botão Salvar e mostra o botão Editar
+                    document.getElementById('btn-save').classList.add('d-none');
+                    document.getElementById('btn-edit').classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Ocorreu um erro ao salvar as alterações.');
+            });
+        }
+    </script>
+    
+    {% endblock %}
+    

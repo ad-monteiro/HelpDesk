@@ -85,6 +85,7 @@ class GrOcorrencia(db.Model):
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     usuario = db.relationship('Usuario', backref='ocorrencias')
+    situacao = db.Column(db.String(50), nullable=False, default='aberto')
 
 class CadCarro(db.Model):
     __tablename__ = 'cad_carro'

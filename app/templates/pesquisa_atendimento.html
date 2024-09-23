@@ -7,16 +7,34 @@ Pesquisa Atendimento
 {% block content %}
 <h1 class="h3 mb-4 text-gray-800">Pesquisa de Atendimentos</h1>
 
-<form method="GET" action="{{ url_for('main.pesquisa_atendimento') }}" class="mb-3">
-    <div class="form-row align-items-end">
-        <div class="form-group col-md-3">
-            <label for="search">Filtrar por Número, Entidade, Prioridade, Tipo</label>
-            <input type="text" class="form-control" id="search" name="search" placeholder="Buscar...">
-        </div>
-        <div class="form-group col-md-1">
-            <button type="submit" class="btn btn-primary">Buscar</button>
-        </div>
+<form method="GET" action="{{ url_for('main.pesquisa_atendimento') }}">
+    <div class="form-group">
+        <label for="search">Buscar por Número, Município, Prioridade ou Tipo</label>
+        <input type="text" name="search" id="search" class="form-control" placeholder="Digite o termo de busca">
     </div>
+
+    <div class="form-group">
+        <label for="situacao">Situação</label>
+        <select name="situacao" id="situacao" class="form-control">
+            <option value="">-- Selecione a Situação --</option>
+            <option value="aberto">Aberto</option>
+            <option value="analise">Em análise</option>
+            <option value="aguardando">Aguardando Programação</option>
+            <option value="finalizado">Finalizado</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="data_inicio">Data de Início</label>
+        <input type="date" name="data_inicio" id="data_inicio" class="form-control">
+    </div>
+
+    <div class="form-group">
+        <label for="data_fim">Data de Fim</label>
+        <input type="date" name="data_fim" id="data_fim" class="form-control">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Pesquisar</button>
 </form>
 
 <div class="table-responsive">
@@ -28,6 +46,7 @@ Pesquisa Atendimento
                 <th>Prioridade</th>
                 <th>Data</th>
                 <th>Tipo</th>
+                <th>Situação</th>
             </tr>
         </thead>
         <tbody>
@@ -38,6 +57,7 @@ Pesquisa Atendimento
                 <td>{{ atendimento.prioridade.descricao }}</td>
                 <td>{{ atendimento.data_criacao.strftime('%d/%m/%Y') }}</td>
                 <td>{{ atendimento.tipo.descricao }}</td>
+                <td>{{ atendimento.situacao }}</td>
             </tr>
             {% endfor %}
         </tbody>

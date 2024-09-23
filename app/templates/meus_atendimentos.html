@@ -7,15 +7,6 @@
 <h1 class="h3 mb-4 text-gray-800">Meus Atendimentos</h1>
 
 
-<!-- Adicionar formulário de pesquisa -->
-<form method="GET" action="{{ url_for('main.meus_atendimentos') }}" class="form-inline mb-3">
-    <div class="form-group mx-sm-3 mb-2">
-        <label for="search" class="sr-only">Pesquisar Atendimento</label>
-        <input type="text" class="form-control" id="search" name="search" placeholder="Número, Entidade ou Data" value="{{ request.args.get('search') }}">
-    </div>
-    <button type="submit" class="btn btn-primary mb-2">Pesquisar</button>
-</form>
-
 <!-- Atendimentos Section -->
 <div class="card shadow mb-4">
     <div class="card-header py-3">
@@ -31,6 +22,7 @@
                         <th>Prioridade</th>
                         <th>Data</th>
                         <th>Tipo</th>
+                        <th>Situação</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,6 +33,7 @@
                             <td>{{ atendimento.prioridade.descricao }}</td>
                             <td>{{ atendimento.data_criacao.strftime('%d/%m/%Y') }}</td>
                             <td>{{ atendimento.tipo.descricao }}</td>
+                            <td>{{ atendimento.situacao }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

@@ -14,6 +14,12 @@ class OcorrenciaForm(FlaskForm):
     descricao = TextAreaField('Descrição', validators=[DataRequired()])
     resolucao = TextAreaField('Resolução')
     anexo = FileField('Anexar Arquivo')  # Campo para anexar arquivo
+    situacao = SelectField('Situação', choices=[
+        ('aberto', 'Aberto'),
+        ('analise', 'Em análise'),
+        ('aguardando', 'Aguardando Programação'),
+        ('finalizado', 'Finalizado')
+    ], validators=[DataRequired()])
     submit = SubmitField('Salvar Alterações')
 
     def __init__(self, *args, **kwargs):

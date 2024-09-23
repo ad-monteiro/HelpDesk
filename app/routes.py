@@ -10,6 +10,7 @@ from . import db
 import requests, random
 from random import randint
 from flask_paginate import Pagination, get_page_args
+from sqlalchemy import and_
 
 bcrypt = Bcrypt()
 
@@ -103,6 +104,7 @@ def nova_ocorrencia():
                 modulo_id=form.modulo.data,
                 descricao=form.descricao.data,
                 resolucao=form.resolucao.data,
+                situacao = form.situacao.data,
                 usuario_id=current_user.id
             )
             
@@ -130,39 +132,83 @@ def nova_ocorrencia():
 def editar_ocorrencia(id):
     # Busca a ocorrência existente no banco de dados
     ocorrencia = GrOcorrencia.query.get_or_404(id)
-    
+
+    # Carregar as opções de tabelas relacionadas
+    prioridades = GrPrioridade.query.all()
+    tipos = CadTpOcorrencia.query.all()
+    softwares = CadSoftware.query.all()
+    modulos = CadModulo.query.all()
+
     # Carrega os dados da ocorrência no formulário para edição
     form = OcorrenciaForm(obj=ocorrencia)
     
     if form.validate_on_submit():
-        # Atualiza os campos da ocorrência existente
+        try:
+            # Atualiza os campos da ocorrência existente
+            ocorrencia.entidade_id = form.entidade_id.data
+            ocorrencia.contato = form.contato.data
+            ocorrencia.prioridade_id = form.prioridade.data
+            ocorrencia.tipo_id = form.tipo.data
+            ocorrencia.software_id = form.software.data
+            ocorrencia.modulo_id = form.modulo.data
+            ocorrencia.descricao = form.descricao.data
+            ocorrencia.resolucao = form.resolucao.data
+            ocorrencia.situacao = form.situacao.data
+
+            # Se houver um arquivo anexado, trate o anexo
+            if form.anexo.data:
+                ocorrencia.anexo = form.anexo.data.filename
+
+            # Salva as mudanças no banco de dados
+            db.session.commit()
+
+            # Exibe uma mensagem de sucesso e redireciona
+            flash('Ocorrência atualizada com sucesso!', 'success')
+            return redirect(url_for('main.meus_atendimentos'))
         
-        # Atribui o ID da entidade diretamente do form, já que é um HiddenField
-        ocorrencia.entidade_id = form.entidade_id.data
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar a ocorrência: {str(e)}', 'danger')
+
+    # Se o método for GET ou o formulário não for válido, renderize o formulário de edição
+    return render_template('ocorrencia_form.html', 
+                           form=form, 
+                           ocorrencia=ocorrencia, 
+                           prioridades=prioridades, 
+                           tipos=tipos, 
+                           softwares=softwares, 
+                           modulos=modulos)
+
+@main_bp.route('/ocorrencia/<int:id>/editar-inline', methods=['POST'])
+@login_required
+def editar_ocorrencia_inline(id):
+    # Busca a ocorrência existente no banco de dados
+    ocorrencia = GrOcorrencia.query.get_or_404(id)
+
+    try:
+        # Coleta os dados da requisição JSON
+        data = request.get_json()
         
-        # Atualiza os outros campos da ocorrência
-        ocorrencia.contato = form.contato.data
-        ocorrencia.prioridade_id = form.prioridade.data
-        ocorrencia.tipo_id = form.tipo.data
-        ocorrencia.software_id = form.software.data
-        ocorrencia.modulo_id = form.modulo.data
-        ocorrencia.descricao = form.descricao.data
-        ocorrencia.resolucao = form.resolucao.data
-        
-        # Se houver um arquivo anexado, trate o anexo
-        if form.anexo.data:
-            # Adicione a lógica de upload de arquivo aqui (se necessário)
-            ocorrencia.anexo = form.anexo.data.filename
+        # Atualiza os campos da ocorrência com os novos dados enviados via AJAX
+        ocorrencia.situacao = data.get('situacao')
+        ocorrencia.contato = data.get('contato')
+        ocorrencia.descricao = data.get('descricao')
+        ocorrencia.resolucao = data.get('resolucao')
+        ocorrencia.prioridade_id = data.get('prioridade')
+        ocorrencia.tipo_id = data.get('tipo')
+        ocorrencia.software_id = data.get('software')
+        ocorrencia.modulo_id = data.get('modulo')
         
         # Salva as mudanças no banco de dados
         db.session.commit()
-        
-        # Exibe uma mensagem de sucesso e redireciona
-        flash('Ocorrência atualizada com sucesso!', 'success')
-        return redirect(url_for('main.meus_atendimentos'))
-    
-    # Se o método for GET ou o formulário não for válido, renderize o formulário de edição
-    return render_template('ocorrencia_form.html', form=form, ocorrencia=ocorrencia)
+
+        # Retorna uma resposta de sucesso em JSON
+        return jsonify({'success': True}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 
 
 @main_bp.route('/ocorrencia/<int:id>/excluir', methods=['POST'])
@@ -293,14 +339,23 @@ def meus_atendimentos():
     atendimentos = query.order_by(GrOcorrencia.data_criacao.desc()).limit(5).all()
     return render_template('meus_atendimentos.html', atendimentos=atendimentos)
 
+
 @main_bp.route('/pesquisa-atendimento', methods=['GET'])
 @login_required
 def pesquisa_atendimento():
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     per_page = 15
-    search_query = request.args.get('search', '')
+
+    # Parâmetros de pesquisa
+    search_query = request.args.get('search', '')  # Campo de busca geral (número de ocorrência, município, etc.)
+    data_inicio = request.args.get('data_inicio', '')  # Filtro para data de início
+    data_fim = request.args.get('data_fim', '')        # Filtro para data de fim
+    situacao = request.args.get('situacao', '')        # Filtro por situação
+
+    # Filtros básicos (ocorrências do usuário logado)
     filter_conditions = [GrOcorrencia.usuario_id == current_user.id]
-    
+
+    # Filtro Geral por número de ocorrência, município, prioridade, tipo
     if search_query:
         filter_conditions.append(
             (GrOcorrencia.numero_ocorrencia.ilike(f'%{search_query}%')) |
@@ -309,9 +364,23 @@ def pesquisa_atendimento():
             (GrOcorrencia.tipo.has(CadTpOcorrencia.descricao.ilike(f'%{search_query}%')))
         )
 
-    atendimentos = GrOcorrencia.query.filter(*filter_conditions).order_by(GrOcorrencia.data_criacao.desc()).offset(offset).limit(per_page).all()
-    total = GrOcorrencia.query.filter(*filter_conditions).count()
-    
+    # Filtro por Situação
+    if situacao:
+        filter_conditions.append(GrOcorrencia.situacao.ilike(f'%{situacao}%'))
+
+    # Filtro por Data de Criação
+    if data_inicio and data_fim:
+        filter_conditions.append(GrOcorrencia.data_criacao.between(data_inicio, data_fim))
+    elif data_inicio:
+        filter_conditions.append(GrOcorrencia.data_criacao >= data_inicio)
+    elif data_fim:
+        filter_conditions.append(GrOcorrencia.data_criacao <= data_fim)
+
+    # Consulta com os filtros aplicados
+    atendimentos = GrOcorrencia.query.filter(and_(*filter_conditions)).order_by(GrOcorrencia.data_criacao.desc()).offset(offset).limit(per_page).all()
+    total = GrOcorrencia.query.filter(and_(*filter_conditions)).count()
+
+    # Paginação
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap4')
 
     return render_template('pesquisa_atendimento.html', atendimentos=atendimentos, page=page, per_page=per_page, pagination=pagination)
@@ -319,8 +388,21 @@ def pesquisa_atendimento():
 @main_bp.route('/ocorrencia/<int:id>/visualizar', methods=['GET'])
 @login_required
 def visualizar_ocorrencia(id):
-    ocorrencia = GrOcorrencia.query.get_or_404(id)  # Busca a ocorrência ou retorna 404 se não existir
-    return render_template('visualizar_ocorrencia.html', ocorrencia=ocorrencia)
+    ocorrencia = GrOcorrencia.query.get_or_404(id)
+    
+    # Carrega as opções para os campos de seleção (selects)
+    prioridades = GrPrioridade.query.all()  # Ajuste de acordo com o seu modelo
+    tipos = CadTpOcorrencia.query.all()  # Ajuste de acordo com o seu modelo
+    softwares = CadSoftware.query.all()  # Ajuste de acordo com o seu modelo
+    modulos = CadModulo.query.all()  # Ajuste de acordo com o seu modelo
+
+    return render_template('visualizar_ocorrencia.html', 
+                           ocorrencia=ocorrencia,
+                           prioridades=prioridades,
+                           tipos=tipos,
+                           softwares=softwares,
+                           modulos=modulos)
+
 
 
 @main_bp.route('/solicitar-ligacao')
