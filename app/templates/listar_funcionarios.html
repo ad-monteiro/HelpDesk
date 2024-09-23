@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Listar Funcionários{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800">Funcionários</h1>
+
+<!-- Botão para cadastrar novo funcionário -->
+<a href="{{ url_for('main.cadastrar_funcionario') }}" class="btn btn-primary mb-3">
+    <i class="fas fa-plus"></i> Cadastrar Funcionário
+</a>
+
+<!-- Tabela de funcionários -->
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>E-mail</th>
+            <th>Setor</th>
+            <th>Perfil</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Itera sobre a lista de funcionários -->
+        {% for funcionario in funcionarios %}
+        <tr onclick="window.location='{{ url_for('main.editar_funcionario', id=funcionario.id) }}';" style="cursor:pointer;">
+            <td>{{ funcionario.nome }}</td>
+            <td>{{ funcionario.cpf }}</td>
+            <td>{{ funcionario.email }}</td>
+            <td>{{ funcionario.setor }}</td>
+            <td>{{ funcionario.perfil_usuario }}</td>
+            <td>
+                <a href="{{ url_for('main.editar_funcionario', id=funcionario.id) }}" class="btn btn-sm btn-warning">Editar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

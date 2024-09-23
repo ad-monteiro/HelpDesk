@@ -23,15 +23,29 @@ class Usuario(UserMixin, db.Model):
     def check_senha(self, senha):
         return bcrypt.check_password_hash(self.senha_hash, senha)
 
-class CadSuporte(db.Model):
-    __tablename__ = 'cad_suporte'
+class Funcionario(db.Model):
+    __tablename__ = 'cad_funcionario'
     id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(255), nullable=False)
-    endereco = db.Column(db.String(255))
-    cnh = db.Column(db.String(50))
-    telefone = db.Column(db.String(20))
-    cpf = db.Column(db.String(14), unique=True)
+    nome = db.Column(db.String(100), nullable=False)
+    cpf = db.Column(db.String(11), nullable=False)
+    rg = db.Column(db.String(20), nullable=False)
+    cnh = db.Column(db.String(20))
+    validade_cnh = db.Column(db.Date)
+    endereco = db.Column(db.String(200))
     setor = db.Column(db.String(100))
+    email = db.Column(db.String(100), nullable=False)
+    data_admissao = db.Column(db.Date, nullable=False)
+    data_demissao = db.Column(db.Date)
+
+    # Relacionamento com a tabela Usuario
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))  # Ajuste importante aqui
+    usuario = db.relationship('Usuario', backref='funcionarios')
+
+    # Campos de controle de status
+    perfil_usuario = db.Column(db.String(20), nullable=False)
+    autorizado = db.Column(db.Boolean, default=False)
+    ativo = db.Column(db.Boolean, default=True)
+
 
     
 class CadEntidade(db.Model):
@@ -98,8 +112,8 @@ class CadCarro(db.Model):
 class GrRelViagemSup(db.Model):
     __tablename__ = 'gr_rel_viagemsup'
     id = db.Column(db.Integer, primary_key=True)
-    suporte_id = db.Column(db.Integer, db.ForeignKey('cad_suporte.id'), nullable=False)
-    suporte = db.relationship('CadSuporte')
+    suporte_id = db.Column(db.Integer, db.ForeignKey('cad_funcionario.id'), nullable=False)
+    suporte = db.relationship('Funcionario', backref='viagens')
     ocorrencia = db.Column(db.Text)
 
 class GrViagem(db.Model):
@@ -111,8 +125,8 @@ class GrViagem(db.Model):
     carro = db.relationship('CadCarro')
     data = db.Column(db.Date)
     horario = db.Column(db.Time)
-    suporte_id = db.Column(db.Integer, db.ForeignKey('cad_suporte.id'), nullable=True)
-    suporte = db.relationship('CadSuporte')
+    suporte_id = db.Column(db.Integer, db.ForeignKey('cad_funcionario.id'), nullable=True)
+    suporte = db.relationship('Funcionario')
     ocorrencia_id = db.Column(db.Integer, db.ForeignKey('gr_rel_viagemsup.id'), nullable=False)
     ocorrencia = db.relationship('GrRelViagemSup')
 
@@ -125,3 +139,31 @@ class GrAnexos(db.Model):
     nome_arquivo = db.Column(db.String(255), nullable=False)
     tipo_arquivo = db.Column(db.String(100), nullable=False)
     data_upload = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Tabelas auxiliares para as relações Many-to-Many
+entidade_viagem = db.Table('entidade_viagem',
+    db.Column('entidade_id', db.Integer, db.ForeignKey('entidade.id')),
+    db.Column('viagem_id', db.Integer, db.ForeignKey('agendamento_viagem.id'))
+)
+
+funcionario_viagem = db.Table('funcionario_viagem',
+    db.Column('funcionario_id', db.Integer, db.ForeignKey('funcionario.id')),
+    db.Column('viagem_id', db.Integer, db.ForeignKey('agendamento_viagem.id'))
+)
+
+carro_viagem = db.Table('carro_viagem',
+    db.Column('carro_id', db.Integer, db.ForeignKey('carro.id')),
+    db.Column('viagem_id', db.Integer, db.ForeignKey('agendamento_viagem.id'))
+)
+
+
+
+class AgendamentoViagem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    data_viagem = db.Column(db.Date, nullable=False)
+    horario_saida = db.Column(db.Time, nullable=False)
+    quilometragem = db.Column(db.Integer, nullable=False)
+
+    entidades = db.relationship('CadEntidade', secondary=entidade_viagem, backref='viagens')
+    funcionarios = db.relationship('Funcionario', secondary=funcionario_viagem, backref='viagens')
+    carros = db.relationship('Carro', secondary=carro_viagem, backref='viagens')

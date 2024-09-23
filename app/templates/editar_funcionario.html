@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Funcionário{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800">Editar Funcionário</h1>
+
+<form method="POST" action="{{ url_for('main.editar_funcionario', id=funcionario.id) }}">
+    {{ form.hidden_tag() }}
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            {{ form.nome.label(class="form-label") }}
+            {{ form.nome(class="form-control") }}
+        </div>
+        <div class="form-group col-md-6">
+            {{ form.cpf.label(class="form-label") }}
+            {{ form.cpf(class="form-control", id="cpf") }}            
+        </div>
+    </div>
+
+    <!-- Script para aplicar a máscara de CPF -->
+    <script>
+        $(document).ready(function(){
+            $('#cpf').mask('000.000.000-00');  // Aplica a máscara no campo CPF
+        });
+    </script>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            {{ form.rg.label(class="form-label") }}
+            {{ form.rg(class="form-control") }}
+        </div>
+        <div class="form-group col-md-6">
+            {{ form.cnh.label(class="form-label") }}
+            {{ form.cnh(class="form-control") }}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            {{ form.validade_cnh.label(class="form-label") }}
+            {{ form.validade_cnh(class="form-control") }}
+        </div>
+        <div class="form-group col-md-6">
+            {{ form.endereco.label(class="form-label") }}
+            {{ form.endereco(class="form-control") }}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            {{ form.setor.label(class="form-label") }}
+            {{ form.setor(class="form-control") }}
+        </div>
+        <div class="form-group col-md-6">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control") }}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            {{ form.data_admissao.label(class="form-label") }}
+            {{ form.data_admissao(class="form-control") }}
+        </div>
+        <div class="form-group col-md-6">
+            {{ form.data_demissao.label(class="form-label") }}
+            {{ form.data_demissao(class="form-control") }}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-4">
+            <label for="usuario_nome" class="form-label">Usuário</label>
+            {{ form.usuario_id(class="form-control d-none", id="usuario_id") }}
+            <input type="text" class="form-control" id="usuario_nome" name="usuario_nome" readonly value="{{ funcionario.usuario.nome if funcionario.usuario else 'Nenhum usuário selecionado' }}">
+        </div>
+        <div class="form-group col-md-2 d-flex align-items-end">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalUsuarios">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+        <div class="form-group col-md-6">
+            {{ form.perfil_usuario.label(class="form-label") }}
+            {{ form.perfil_usuario(class="form-control") }}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <!-- Campo Autorizado -->
+        <div class="form-group col-md-2">
+            <div class="form-check">
+                {{ form.autorizado(class="form-check-input") }}
+                {{ form.autorizado.label(class="form-check-label") }}
+            </div>
+        </div>
+    
+        <!-- Campo Ativo -->
+        <div class="form-group col-md-2">
+            <div class="form-check">
+                {{ form.ativo(class="form-check-input") }}
+                {{ form.ativo.label(class="form-check-label") }}
+            </div>
+        </div>
+    </div>
+    
+
+    <button type="submit" class="btn btn-success">Salvar</button>
+    <a href="{{ url_for('main.listar_funcionarios') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<!-- Modal de Seleção de Usuário -->
+<div class="modal fade" id="modalUsuarios" tabindex="-1" role="dialog" aria-labelledby="modalUsuariosLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalUsuariosLabel">Selecionar Usuário</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Lista de usuários para selecionar -->
+                <table id="userTable" class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr data-id="{{ usuario.id }}" data-nome="{{ usuario.nome }}">
+                            <td>{{ usuario.nome }}</td>
+                            <td>{{ usuario.email }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+    $(document).ready(function() {
+        // Selecionar o usuário na tabela e fechar a modal
+        $('#userTable tbody tr').on('click', function() {
+            var userId = $(this).data('id');
+            var userName = $(this).data('nome');
+            $('#usuario_id').val(userId);  // Preenche o ID do usuário selecionado
+            $('#usuario_nome').val(userName);  // Exibe o nome do usuário selecionado
+            $('#modalUsuarios').modal('hide');  // Fecha a modal
+        });
+    });
+</script>
+
+{% endblock %}

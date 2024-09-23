@@ -30,6 +30,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
 
     <!-- jQuery Mask Plugin -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
@@ -91,7 +94,12 @@
                     <i class="fas fa-fw fa-cog"></i>
                     <span>Cadastros</span></a>
             </li>
-
+            <!-- Nav Item - Cadastros de Funcionarios -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.listar_funcionarios') }}">
+                    <i class="fas fa-fw fa-cog"></i>
+                    <span>Cadastro de Funcionarios</span></a>
+            </li>
             <!-- Nav Item - Agendar Viagem -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('main.agendar_viagem') }}">

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app as app
 from flask_login import login_user, logout_user, login_required, current_user
-from .models import Usuario, GrOcorrencia, GrAnexos, CadEntidade, GrPrioridade, CadTpOcorrencia, CadSoftware, CadModulo, CadCarro
-from .forms import LoginForm, RegisterForm, OcorrenciaForm, AnexoForm, EntidadeForm, SoftwareForm, ModuloForm, PrioridadeForm, TipoOcorrenciaForm, CarroForm
+from .models import Usuario, GrOcorrencia,AgendamentoViagem, GrAnexos, CadEntidade, GrPrioridade, CadTpOcorrencia, CadSoftware, CadModulo, CadCarro, Funcionario
+from .forms import LoginForm, RegisterForm, OcorrenciaForm, AnexoForm, EntidadeForm, SoftwareForm, ModuloForm, PrioridadeForm, TipoOcorrenciaForm, CarroForm, FuncionarioForm
 from flask_bcrypt import Bcrypt
 from werkzeug.utils import secure_filename
 import os
@@ -11,6 +11,7 @@ import requests, random
 from random import randint
 from flask_paginate import Pagination, get_page_args
 from sqlalchemy import and_
+import logging
 
 bcrypt = Bcrypt()
 
@@ -451,10 +452,57 @@ def cadastros():
                            carros=carros,
                            active_tab=active_tab)
 
-@main_bp.route('/agendar-viagem')
+@main_bp.route('/agendar_viagem', methods=['GET', 'POST'])
 @login_required
 def agendar_viagem():
-    return render_template('agendar_viagem.html')
+    form = AgendamentoViagem()
+
+    # Busca as opções disponíveis para entidades, funcionários e carros
+    entidades = CadEntidade.query.all()  # Carregar todas as entidades do banco
+    funcionarios = Funcionario.query.all()  # Carregar todos os funcionários
+    carros = CadCarro.query.all()  # Carregar todos os carros
+
+    # Preencher as opções nos campos de seleção múltipla
+    form.entidades.choices = [(entidade.id, entidade.nome) for entidade in entidades]
+    form.funcionarios.choices = [(funcionario.id, funcionario.nome) for funcionario in funcionarios]
+    form.carros.choices = [(carro.id, carro.modelo) for carro in carros]
+
+    if form.validate_on_submit():
+        try:
+            # Lógica para salvar o agendamento da viagem
+            viagem = AgendamentoViagem(
+                data_viagem=form.data_viagem.data,
+                horario_saida=form.horario_saida.data,
+                quilometragem=form.quilometragem.data
+            )
+            
+            # Adicionar as entidades vinculadas
+            for entidade_id in form.entidades.data:
+                entidade = CadEntidade.query.get(entidade_id)
+                viagem.entidades.append(entidade)
+
+            # Adicionar os funcionários vinculados
+            for funcionario_id in form.funcionarios.data:
+                funcionario = Funcionario.query.get(funcionario_id)
+                viagem.funcionarios.append(funcionario)
+
+            # Adicionar os carros vinculados
+            for carro_id in form.carros.data:
+                carro = CadCarro.query.get(carro_id)
+                viagem.carros.append(carro)
+
+            db.session.add(viagem)
+            db.session.commit()
+
+            flash('Viagem agendada com sucesso!', 'success')
+            return redirect(url_for('main.lista_agendamentos'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao salvar o agendamento da viagem: {e}', 'danger')
+
+    return render_template('agendar_viagem.html', form=form)
+
 
 @main_bp.route('/buscar-entidades')
 @login_required
@@ -601,3 +649,96 @@ def editar_carro(id):
 
     return render_template('carro_form.html', form=form)
 
+
+import logging
+
+@main_bp.route('/funcionarios/cadastrar', methods=['GET', 'POST'])
+@login_required
+def cadastrar_funcionario():
+    form = FuncionarioForm()
+
+    # Busca os usuários disponíveis para vincular
+    usuarios = Usuario.query.all()
+
+    if form.validate_on_submit():
+        try:
+            funcionario = Funcionario(
+                nome=form.nome.data,
+                cpf=form.cpf.data,
+                rg=form.rg.data,
+                cnh=form.cnh.data,
+                validade_cnh=form.validade_cnh.data,
+                endereco=form.endereco.data,
+                setor=form.setor.data,
+                email=form.email.data,
+                data_admissao=form.data_admissao.data,
+                data_demissao=form.data_demissao.data if form.data_demissao.data else None,
+                usuario_id=form.usuario_id.data if form.usuario_id.data else None,
+                perfil_usuario=form.perfil_usuario.data,
+                autorizado=form.autorizado.data,
+                ativo=form.ativo.data
+            )
+            db.session.add(funcionario)
+            db.session.commit()
+            flash('Funcionário cadastrado com sucesso!', 'success')
+            return redirect(url_for('main.listar_funcionarios'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao salvar funcionário: {e}', 'danger')
+    else:
+        flash('Erro ao validar o formulário.', 'danger')
+
+    return render_template('cadastrar_funcionario.html', form=form, usuarios=usuarios)
+
+
+@main_bp.route('/buscar-usuarios', methods=['GET'])
+@login_required
+def buscar_usuarios():
+    query = request.args.get('query')
+    
+    # Suponha que você tenha uma tabela `Usuario` para buscar os usuários
+    usuarios = Usuario.query.filter(Usuario.nome.ilike(f"%{query}%")).all()
+    
+    # Retorne os resultados no formato necessário (por exemplo, JSON)
+    return jsonify({
+        'usuarios': [{'id': u.id, 'nome': u.nome} for u in usuarios]
+    })
+
+@main_bp.route('/funcionarios', methods=['GET'])
+@login_required
+def listar_funcionarios():
+    funcionarios = Funcionario.query.all()  # Busca todos os funcionários
+    return render_template('listar_funcionarios.html', funcionarios=funcionarios)
+
+@main_bp.route('/funcionarios/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_funcionario(id):
+    funcionario = Funcionario.query.get_or_404(id)
+    form = FuncionarioForm(obj=funcionario)
+
+    if form.validate_on_submit():
+        try:
+            # Atualize os dados do funcionário
+            funcionario.nome = form.nome.data
+            funcionario.cpf = form.cpf.data
+            funcionario.rg = form.rg.data
+            funcionario.cnh = form.cnh.data
+            funcionario.validade_cnh = form.validade_cnh.data
+            funcionario.endereco = form.endereco.data
+            funcionario.setor = form.setor.data
+            funcionario.email = form.email.data
+            funcionario.data_admissao = form.data_admissao.data
+            funcionario.data_demissao = form.data_demissao.data
+            funcionario.usuario_id = form.usuario_id.data if form.usuario_id.data else None
+            funcionario.perfil_usuario = form.perfil_usuario.data
+            funcionario.autorizado = form.autorizado.data
+            funcionario.ativo = form.ativo.data
+
+            db.session.commit()
+            flash('Funcionário atualizado com sucesso!', 'success')
+            return redirect(url_for('main.listar_funcionarios'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar funcionário: {e}', 'danger')
+
+    return render_template('cadastrar_funcionario.html', form=form, usuarios=Usuario.query.all())

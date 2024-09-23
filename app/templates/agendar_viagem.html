@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Agendar Viagem{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800">Agendamento de Viagem</h1>
+
+<form method="POST" action="{{ url_for('main.agendar_viagem') }}">
+    {{ form.hidden_tag() }}
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            {{ form.entidades.label(class="form-label") }}
+            {{ form.entidades(class="form-control") }}
+        </div>
+        <div class="form-group col-md-6">
+            {{ form.funcionarios.label(class="form-label") }}
+            {{ form.funcionarios(class="form-control") }}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            {{ form.carros.label(class="form-label") }}
+            {{ form.carros(class="form-control") }}
+        </div>
+        <div class="form-group col-md-6">
+            {{ form.quilometragem.label(class="form-label") }}
+            {{ form.quilometragem(class="form-control") }}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            {{ form.data_viagem.label(class="form-label") }}
+            {{ form.data_viagem(class="form-control") }}
+        </div>
+        <div class="form-group col-md-6">
+            {{ form.horario_saida.label(class="form-label") }}
+            {{ form.horario_saida(class="form-control") }}
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">Agendar Viagem</button>
+</form>
+
+{% endblock %}

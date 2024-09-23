@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, FileField, PasswordField, EmailField, ValidationError, HiddenField
-from wtforms.validators import DataRequired, Email, EqualTo, Length
+from wtforms import StringField, TextAreaField,TimeField, SelectField, SubmitField, FileField, PasswordField, EmailField, ValidationError, HiddenField, DateField, BooleanField, IntegerField, SelectMultipleField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 from .models import Usuario, CadEntidade, GrPrioridade, CadTpOcorrencia, CadSoftware, CadModulo
 
 class OcorrenciaForm(FlaskForm):
@@ -89,3 +89,31 @@ class CarroForm(FlaskForm):
     ano = StringField('Ano', validators=[DataRequired()])
     marca = StringField('Marca', validators=[DataRequired()])
     submit = SubmitField('Salvar')
+
+
+class FuncionarioForm(FlaskForm):
+    nome = StringField('Nome', validators=[DataRequired()])
+    cpf = StringField('CPF', validators=[DataRequired(), Length(min=11, max=11)])
+    rg = StringField('RG', validators=[Optional()])
+    cnh = StringField('CNH')
+    validade_cnh = DateField('Validade CNH', format='%Y-%m-%d')
+    endereco = StringField('Endereço', validators=[DataRequired()])
+    setor = StringField('Setor', validators=[DataRequired()])
+    email = StringField('E-mail', validators=[DataRequired(), Email()])
+    data_admissao = DateField('Data de Admissão', format='%Y-%m-%d')
+    data_demissao = DateField('Data de Demissão', format='%Y-%m-%d', validators=[Optional()])
+    usuario_id = HiddenField('Usuário ID')  # Este campo será preenchido pela pesquisa no modal
+    perfil_usuario = SelectField('Perfil de Usuário', choices=[('Suporte', 'Suporte'), ('Administrador', 'Administrador'), ('Telefonista', 'Telefonista')])
+    autorizado = BooleanField('Autorizado?')
+    ativo = BooleanField('Ativo?')
+    submit = SubmitField('Salvar')
+
+
+class AgendamentoViagemForm(FlaskForm):
+    entidades = SelectMultipleField('Entidades', coerce=int, validators=[DataRequired()])
+    funcionarios = SelectMultipleField('Funcionários', coerce=int, validators=[DataRequired()])
+    carros = SelectMultipleField('Carros', coerce=int, validators=[DataRequired()])
+    quilometragem = IntegerField('Quilometragem', validators=[DataRequired()])
+    data_viagem = DateField('Data da Viagem', format='%d-%m-%Y', validators=[DataRequired()])
+    horario_saida = TimeField('Horário de Saída', validators=[DataRequired()])
+    submit = SubmitField('Agendar Viagem')    
